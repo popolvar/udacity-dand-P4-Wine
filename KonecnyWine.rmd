@@ -60,8 +60,21 @@ just to help you get started.
 
 
 
+
+```{r echo=FALSE, Univariate_Plots}
+wines_w$rating = wines_w$quality
+
+wines_w$quality = ordered(wines_w$quality)
+
+wines_w$rating = ordered(cut(wines_w$rating,c(0,5,6,7,8), 
+                             labels = c('bad','medium','good','excelent')))
+                         
+str(wines_w)                         
+```
+
 ```{r echo=FALSE, Univariate_Plots}
 
+head(wines_w[c("rating","quality")],30)                         
 ```
 
 > **Tip**: Make sure that you leave a blank line between the start / end of

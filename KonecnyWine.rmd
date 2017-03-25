@@ -1,14 +1,5 @@
-TITLE by STEFAN KONECNY
+EXPLORING WINE QUALITY by STEFAN KONECNY
 ========================================================
-
-> **Tip**: You will see quoted sections like this throughout the template to
-help you construct your report. Make sure that you remove these notes before
-you finish and submit your project!
-
-> **Tip**: One of the requirements of this project is that your code follows
-good formatting techniques, including limiting your lines to 80 characters or
-less. If you're using RStudio, go into Preferences \> Code \> Display to set up
-a margin line to help you keep track of this guideline!
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
 # Load all of the packages that you end up using in your analysis in this code
@@ -24,84 +15,522 @@ a margin line to help you keep track of this guideline!
 # want it to. This will clean up the flow of your report.
 
 library(ggplot2)
+library(gridExtra)
+#library(GGally)
 ```
 
-```{r echo=FALSE, Load_the_Data}
-# Load the Data
-wines_w <-read.csv('wineQualityWhites.csv')
-str(wines_w)
+This data contains information about quality of (Vinho Verde) white wines from Minho region (in Portugal). It contains objective measurements of 11 chemical attributes of 4898 different white wines along with a quality score. The data set is tidy and complete i.e. there are no data entries missing.
 
-table(wines_w$quality)
+The quality score is median value from an expert jury with at least three judges. It would be very interesting to have also the scores of individual judges, so I could see the variance in scores. Unfortunately only the aggregate value is provided.
 
-wines_r <-read.csv('wineQualityReds.csv')
-str(wines_r)
-
-table(wines_r$quality)
-```
-
-> **Tip**: Before you create any plots, it is a good idea to provide a short
-introduction into the dataset that you are planning to explore. Replace this
-quoted text with that general information!
-
-This data contains information about quality of (Vinho Verde) white wines from Minho. It contains objective meassurment of 11 chemical attributes of 4898 different white wines along with a quality score.
-
-The quality score is median value from and expert jury with at least three judges. It would be very interesting to have also the scores of individual judges, so I could see the variance in scores. Unfortuantelly only the aggregate value is provided.
-
-Quality takes a numerical value, but it is effectivelly an ordered factor. According to [dataset description](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityInfo.txt) possible values for quality range from 0 (very bad) and 10 (very excellent). The [academic paper](https://www.researchgate.net/publication/222430341_Modeling_wine_preferences_by_data_mining_from_physicochemical_properties) referencing the dataset suggests that expert judged the wine on numeric scale.
+Quality takes a numerical value, but it is effectively an ordered factor (and is treated accordingly). According to [dataset description](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityInfo.txt) possible values for quality range from 0 (very bad) and 10 (very excellent). The [academic paper](https://www.researchgate.net/publication/222430341_Modeling_wine_preferences_by_data_mining_from_physicochemical_properties) referencing the dataset suggests that expert judged the wine on this numeric scale (as opposed to a qualitative scale later mapped to numbers). 
 
 # Univariate Plots Section
 
-> **Tip**: In this section, you should perform some preliminary exploration of
-your dataset. Run some summaries of the data and create univariate plots to
-understand the structure of the individual variables in your dataset. Don't
-forget to add a comment after each plot or closely-related group of plots!
-There should be multiple code chunks and text sections; the first one below is
-just to help you get started.
+```{r echo=FALSE}
+#Load the Data
+#sum(complete.cases(wines_w))
+wines_w <-read.csv('wineQualityWhites.csv')
 
+##add new variables
 
+wines_w$rating <- wines_w$quality
+#wines_w$num_quality <- wines_w$quality
 
+#cast quality into ordered factor
+#wines_w$quality <- ordered(wines_w$quality)
 
-```{r echo=FALSE, Univariate_Plots}
-wines_w$rating = wines_w$quality
-
-wines_w$quality = ordered(wines_w$quality)
-
-wines_w$rating = ordered(cut(wines_w$rating,c(0,5,6,7,8), 
+#create rating which has broader categories 4 instead of 10
+wines_w$rating <- ordered(cut(wines_w$rating, c(0,4,6,7,10), 
                              labels = c('bad','medium','good','excelent')))
-                         
-str(wines_w)                         
+
+#check whether it worked
+#head(wines_w[c("rating","quality")],30)
+
+#creating new ratio variable
+wines_w$ratio.sulfur.dioxide<-wines_w$free.sulfur.dioxide/wines_w$total.sulfur.dioxide
 ```
 
-```{r echo=FALSE, Univariate_Plots}
 
-head(wines_w[c("rating","quality")],30)                         
+```{r echo=FALSE, Univariate_Plots_Quality}
+#Draw a histogram of quality color coded by rating
+#show_leg tells whether legend should be shown (for matrix of plots)
+#show_all_hist shows dashed histogram of the original dataset (used in conjunction with filtered datasets)
+
+quality_bar<-function(title, data1 = wines_w, show_leg = FALSE, show_all_hist = FALSE){
+  p1<-ggplot(aes(x = quality, fill = rating), data = data1) +
+  geom_bar() +
+  xlab('Quality') +
+  ylab('Count')+
+  ggtitle(title)
+  
+  #remove legend,
+  if(!show_leg){
+    p1<-p1+theme(legend.position="none")
+  }
+  
+  if(show_all_hist){
+    p1<-p1+geom_bar(color = 'red', fill = NA, linetype="dashed", data = wines_w)
+  }
+
+  return(p1)
+}
+
+quality_bar("Name", show_all_hist = FALSE)                    
 ```
 
-> **Tip**: Make sure that you leave a blank line between the start / end of
-each code block and the end / start of your Markdown text so that it is
-formatted nicely in the knitted text. Note as well that text on consecutive
-lines is treated as a single space. Make sure you have a blank line between
-your paragraphs so that they too are formatted for easy readability.
+Quality and Rating are the only two factor variables. The remaining variables are numerical.
+
+According to the dataset description numerical variables can be divided into:
+
+1. those measured on a normalized scale: pH and alcohol
+2. those measured in weight per volume: the rest
+    + some of these values my depend on each other, such as free and total sulfur dioxide
+    
+The value range for all variables is quite narrow and similar for all ratings. The distributions don't have a significant long tail as they had with diamond prices or facebook friend counts.
+
+Let me start with factoring alcohol and pH through rating. Will set the scale to 'free_y' so the less frequent rating are not flattened.
+
+```{r echo=FALSE, Univariate_Plots_Alcohol_facet_Rating}
+
+ggplot(aes(x = alcohol, fill = rating), data = wines_w) +
+  geom_histogram(color = 'gray') +
+  facet_wrap(~rating) 
+
+
+ggplot(aes(x = alcohol, fill = rating), data = wines_w) +
+  geom_histogram(color = 'gray') +
+  facet_wrap(~rating, scale = 'free_y') 
+```
+
+```{r echo=FALSE, Univariate_Plots_pH_facet_Rating}
+ggplot(aes(x = pH, fill = rating), data = wines_w) +
+  geom_histogram(color = 'gray') +
+  facet_wrap(~rating, scale = 'free_y') 
+```
+
+## Investigating individual variables
+
+###General trends
+
+I investigated all the variables with the function bellow. In general histograms showed a similar trends and (seemingly) normal distribution. On the other hand Boxplots and Summaries of some variables revealed some interesting trends.
+
+Boxplot and Summaries show tha medium (rating) wines typically exhibit the most variance (and most outliers). Since medium is the most frequent category, it is not surprising. Conversely excelent wines are rare and generally have the lowest variance.
+
+```{r echo=FALSE, Univariate_Plots_Variable_facet_Rating}
+
+explore_var <- function(var1, data1 = wines_w){
+  #histograms 
+  h1<-ggplot(aes(x = var1, fill = rating), data = data1 )+
+  geom_histogram(color = 'gray') +
+  facet_wrap(~rating, scales = "free_y")+
+  #only use the part after $
+  ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
+
+  
+  # boxplot
+  b1<-ggplot(aes(y = var1, x= rating), data = data1)+
+  geom_boxplot()+
+  
+  #only use the part after $ for label name
+  ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+  stat_summary(fun.y=mean, colour="red", geom="point", size=2)
+  
+  #summary
+  s1<-by(var1,wines_w$rating, summary)
+
+  return(list(h1,b1,s1))
+}
+```
+
+
+```{r echo=FALSE}
+res_var <-explore_var(wines_w$chlorides)
+```
+
+Notes:
+
+Alcohol - similar trends but bad and medium wines are skewed towards lower aclohol content
+
+pH - very similar trends, no outliers for excelent wines
+
+volatile.acidity - higher for bad wines (check summary)
+
+chlorides - higher for bad wines (check summary), very cool strong trend 1,2,3Q + mean drops with rating
+
+free.sulfur.dioxide - could be used to prune bad wines? (check summary)
+
+free/total.sulfur - could be used to prune bad wines, very cool strong trend 1,2,3Q + mean grows with rating
+
+density - higher for bad wines (check summary)
+
+alcohol - lower for bad wines
+
+Some of the variable considered below revealed interesting trends. Namely **chlorides**, **ratio between free.sulfur.dioxide and total.sulfur.dioxide** and **density**. These trends can be spotted in boxplots and become clearly visible in statistical summary.
+
+###Chlorides
+ 
+```{r echo=FALSE}
+res_var[2]
+```
+
+This plot suggests that the median for good and excellent wines is less the the first quartile for medium and bad wines. This means that good wines are statistically more likely to have lower value of chlorides then bad ones. The summary confirms this.
+
+```{r}
+res_var[3]
+```
+
+So if I would discard all wines with chlorides above 0.03700 (the median for good wines), I would discard majority of bad and medium wines and still keep a significant proportion of good and excellent ones.
+
+If I decide to focus exclusively on excellent wines, I can go even tighter and remove wines with chlorides above 0.0355 (median for excellent wines).
+
+Another observation is that value for all quartiles and the mean decrases with rating. So there is a strong trend there.
+
+###Ratio between free.sulfur.dioxide and total.sulfur.dioxide
+
+For free.sulfur.dioxide boxplot reveals a promise of a trend allowing me to discard some bad wines.
+
+```{r}
+explore_var(wines_w$free.sulfur.dioxide)[2]
+```
+
+Interesting the ratio of free and total sulfur dioxide reveals an even clearer trend. This is true despite of the total sulfur dioxide not showing a strong trend on its own.
+
+```{r}
+explore_var(wines_w$free.sulfur.dioxide)[2]
+
+explore_var(wines_w$total.sulfur.dioxide)[2]
+
+explore_var(wines_w$ratio.sulfur.dioxide)[2]
+```
+
+Once again I validate this insight by inspecting the the statistical summary.
+
+```{r}
+explore_var(wines_w$ratio.sulfur.dioxide)[3]
+```
+
+In this case median of good wines is above the 3rd Quartile of bad wines. And this allows me to filter out large majority of bad wines. 
+
+Similarly to the chlorides all Quartiles and the mean follow a clear (this time growing) trend with the rating. 
+
+###Density
+
+I did the same analysis for density.
+
+```{r}
+explore_var(wines_w$density)[3]
+```
+
+This time median for good and excellent wines is bellow the first quartile for medium and bad ones. So I can again discard some medium and bad wines as with chlorides.
+
+In this case the quantiles and mean do not follow a clear trend w.r.t to rating.
+
+###Alcohol
+
+```{r}
+explore_var(wines_w$alcohol)[3]
+```
+
+Alcohol content almost follows a growing trend for quantiles and mean w.r.t ratio. I decided not to filter out wines with low alcohol content, since alcohol content is typically known to the consumer (unlike the other investigated variables). Hence  removing wines with low alcohol volume may reduce choices for consumer with this preference.
+
+###Filtering
+
+Based on the above observation I have created a filtered dataset. I kept wines with following properties:
+
+1. chlorides < 0.037 (median for good wines)
+2. ratio.sulfur.dioxide > 0.2717 (median for good wines)
+3. density < 0.9918 (median for good wines)
+4. alcohol > 11.00 (3Q for medium) - NOT USED.
+
+The filtered data set contains 374 wines, which represent 7.63% of the original dataset of 4898 wines.
+
+```{r echo=FALSE, Filter_Variables}
+#names(wines_w)
+
+filter_data <- function(exp1, data1 = wines_w, verbose = FALSE){
+  data2 <-subset(data1,eval(exp1))
+  
+  #printout reduction
+  if(verbose){
+    t1<-table(data1$quality)
+    t2<-table(data2$quality)
+  
+    dif <-t2/t1
+    print(dif)
+  }
+  
+  return(data2)
+}
+```
+
+More importantly the distribution of the rating changed significantly as apparent from this grid plot. The dashed shape in the backgound shows the barplot with all the wines (before filtering).
+
+```{r echo=FALSE, Filtering_Wines_Stage_I}
+#filter_data(quote(wines_w$chlorides<0.037),verbose = TRUE)
+
+#before filtering
+p0 <-quality_bar("All")
+
+draw_siluette = TRUE
+
+#filter chlorides <0.037 <0.0355
+filtered_wines_w<-filter_data(quote(chlorides<0.037))
+fw<-filter_data(quote(chlorides<0.037))
+p1 <- quality_bar("Chlorides", fw, show_all_hist = draw_siluette)
+
+#filter ratio.sulfur.dioxide>0.2717
+filtered_wines_w<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = filtered_wines_w)
+fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717))
+p2 <- quality_bar("Sulf Ratio", fw, show_all_hist = draw_siluette)
+
+#filter density <0.9918 0.9916
+filtered_wines_w <-filter_data(quote(density<0.9918), data = filtered_wines_w)
+
+fw<-filter_data(quote(density<0.9918))
+
+p3 <- quality_bar("Density", fw, show_all_hist = draw_siluette)
+
+p4 <- quality_bar("Filtered", fw, show_all_hist = draw_siluette)
+
+
+grid.arrange(p0, p1, p2, p3, p4, ncol=2)
+
+
+#table(wines_w$rating)/length(wines_w$rating)
+#table(filtered_wines_w$rating)/length(filtered_wines_w$rating)
+
+print("All wines")
+table(wines_w$quality)/length(wines_w$quality)
+
+print("After Filtering")
+table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
+
+#table(wines_w$quality)
+#table(filtered_wines_w$quality)
+
+#removed
+
+#print("Wines Filtered Out")
+#(table(wines_w$quality) - table(filtered_wines_w$quality))/table(wines_w$quality)
+```
+
+The original distribution is in the top left bar plot and the filtered one is in the bottom left one. The ratio of < 6 wines (short for wines with quality 6 and below) is much smaller. Wines with the lowest quality 3 were completely removed. The most frequent quality is now 7 (44.4%), whereas originally it was  6 (with 44.9%).
+
+More then 98.5% of < 6 wines were removed. 93% of 6's were removed in contrast to only 81% / 82% for 7/8's and only 40% of 9's.
+
+Therefore there is a higher ratio of wines of above 6 (good and excellent, 53.75%) then below 7 (medium and bad, 46.25%).
+
+Because there is now similar number of 6's and 7's left it will be easier to spot differences and commonalities between the two groups.
+
+###Impact of filtering
+
+```{r echo=FALSE}
+#this a bit hacky, I create a new data frame with adding the
+#filtered wines to be able to do before/after boxplots
+
+wines_w$filtering = 'all'
+filtered_wines_w$filtering = 'filtered'
+
+baf_wines_w <- rbind(wines_w,filtered_wines_w)
+```
+
+```{r echo=FALSE}
+explore_filtering = function(var1, data1 = baf_wines_w, f1 = 'filtered'){
+  
+  #caculate the range in y for the filtered only
+  dataf1 <-var1[data1$filtering == f1]
+  r1 <- range(dataf1)
+  
+  #even tighter range between whiskers
+  iqr1 <- IQR(dataf1)
+  r2 <- c(median(dataf1)- 2*iqr1, median(dataf1)+ 2*iqr1)
+  
+  p1<-ggplot(aes(y = var1, x= filtering), data = data1)+
+    geom_boxplot()+
+    #only use the part after $
+    ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+    stat_summary(fun.y=mean, colour="red", geom="point",
+                 size=2)+
+    coord_cartesian(ylim=r2)+
+    facet_wrap(~rating)
+  
+  p2<-ggplot(aes(y = var1, x= rating), data = data1)+
+    geom_boxplot()+
+    #only use the part after $
+    ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+    stat_summary(fun.y=mean, colour="red", geom="point",
+                 size=2)+
+    coord_cartesian(ylim=r1)+
+    facet_wrap(~filtering)
+  
+  p3<-ggplot(aes(y = var1, x= rating), data = data1)+
+    geom_boxplot()+
+    #only use the part after $
+    ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+    stat_summary(fun.y=mean, colour="red", geom="point",
+                 size=2)+
+    coord_cartesian(ylim=r2)+
+    facet_wrap(~filtering)
+  
+  return(list(p1,p2,p3))
+}
+```
+
+Next I have re-examined the variables again, this time considering only the filtered wines. I was curious whether new trends have emerged. This is indeed the case. The most pronounced trend can be observed for residual sugar.
+
+####Residual sugar
+
+```{r echo=FALSE}
+#can discriminate between excellent good and bad
+explore_filtering(baf_wines_w$residual.sugar)[[3]]+
+  geom_hline(yintercept = 2.6, color = "blue", linetype="dotted")+
+  geom_hline(yintercept = 4.212, color = "green", linetype="dotted")
+by(filtered_wines_w$residual.sugar,filtered_wines_w$rating, summary)
+
+#disciminates excellent vs good removes all bead and half medium
+#volatile.acidity > 0.2700 (1Q excellent)
+# explore_filtering(baf_wines_w$volatile.acidity)[3]
+# by(filtered_wines_w$volatile.acidity,filtered_wines_w$rating, summary)
+
+#discriminates excellent vs good removes all the bad wines but leaves medium
+# explore_filtering(baf_wines_w$citric.acid)[3]
+# by(filtered_wines_w$citric.acid,filtered_wines_w$rating, summary)
+
+#removes medium and bad wines below 3Q Bad
+# explore_filtering(baf_wines_w$total.sulfur.dioxide)[3]
+# by(filtered_wines_w$total.sulfur.dioxide,filtered_wines_w$rating, summary) 
+```
+
+Once again I could remove majority (more then 75%) of wines < 5 while certainly keeping at least 50% of remaining > 6 wines. To do this, I would need to remove all wines with residual sugar > 2.6 (3Q for medium wines, blue dotted line).
+
+In the first round of filtering the aim was to remove bulk of bad and medium wines. Now I have more control. I could also use residual sugar to separate good and excellent wines by keeping only wines with residual sugar above 4.212 (3Q good, green dotted line).
+
+####Options for further filtering
+
+Besides residual sugar, I could use value of total.sulfur.dioxide > 113.8 to remove majority of bad and medium wines
+
+```{r echo=FALSE}
+explore_filtering(baf_wines_w$total.sulfur.dioxide)[[3]]+
+  geom_hline(yintercept = 113.8, color = "blue", linetype="dotted")
+```
+
+Or use the value of citric.acid > 0.3375 to separate good and excellent wines (after I removed the medium wines through residual sugar or total sulfur dioxide value).
+
+```{r echo=FALSE}
+explore_filtering(baf_wines_w$citric.acid)[[3]]+
+  geom_hline(yintercept = 0.3375, color = "blue", linetype="dotted")
+```
+
+Alcohol remains a promising candidate for removing most bad and medium wines, while keeping at least the half of excellent ones.
+
+```{r echo=FALSE}
+explore_filtering(baf_wines_w$alcohol)[[3]]+
+  geom_hline(yintercept = 12.4, color = "blue", linetype="dotted")
+```
+
+
+In summary I have many more options for additional filtering:
+
+1. residual.sugar > 2.6 (3Q medium) or > 4.212 (3Q good)
+2. total.sulfur.dioxide > 113.8 (3Q bad > 3Q medium)
+3. alcohol > 12.4 (3Q medium)
+4. citric.acid > 0.3375 (3Q good)
+ 
+The trends in the filtered wines appear much clearer. They also allow for filtering not only medium wines but even to reduce the proportion between good an excellent ones.
+
+However I was not able to complete remove bad wines with simple pruning described above. If I apply all the filtering steps simultaneously, there would only 9 wines left: 5 bad, 2 medium and 2 excellent. But if I skip the citric acid step, I will have 5 bad, 11 medium and 6 excellent. The latter distribution is seems much more promising.
+
+```{r echo=FALSE}
+fw1 <- filter_data(quote(residual.sugar > 4.212 & total.sulfur.dioxide > 113.8 &
+                          alcohol > 12.4), data = filtered_wines_w)
+p1 <- quality_bar("No C.A.", fw1)
+
+fw0 <- filter_data(quote(citric.acid > 0.3375), data = fw1)
+p0  <- quality_bar("All", fw0)
+p0  <- p0+geom_bar(color = 'green', fill = NA, linetype="dashed", data = fw1)
+
+grid.arrange(p0, p1, ncol=2)
+```
+
+
+
+
+Next I would like investigate how much filtering reduces the variety of wines. I will do that by drawing bi- and multivariate plots.
+
+```{r echo=FALSE, Filtering_Wines_Stage_II}
+#filter 
+#filtered2_wines_w<-filter_data(quote(residual.sugar > 2.6), data = filtered_wines_w)
+fw <- filter_data(quote(residual.sugar > 2.6), data = filtered_wines_w)
+p1 <- quality_bar("Residual Sugar", fw)
+p1 <- p1+geom_bar(color = 'green', fill = NA, linetype="dashed", data = filtered_wines_w)
+
+filtered2_wines_w<-filter_data(quote(residual.sugar > 4.212), data = filtered_wines_w)
+fw <- filter_data(quote(residual.sugar > 4.212), data = filtered_wines_w)
+p2 <- quality_bar("Residual Sugar", fw)
+p2 <- p2+geom_bar(color = 'green', fill = NA, linetype="dashed", data = filtered_wines_w)
+
+#SULFUR
+filtered2_wines_w<-filter_data(quote(total.sulfur.dioxide > 113.8), data = filtered2_wines_w)
+#filtered2_wines_w<-filter_data(quote(total.sulfur.dioxide > 113.8), data = filtered_wines_w)
+fw <- filter_data(quote(total.sulfur.dioxide > 113.8), data = filtered_wines_w)
+p3 <- quality_bar("T. S. D.", fw)
+p3 <- p3+geom_bar(color = 'green', fill = NA, linetype="dashed", data = filtered_wines_w)
+
+#CITRIC ACID
+#filtered2_wines_w<-filter_data(quote(citric.acid > 0.3375), data = filtered2_wines_w)
+fw <- filter_data(quote(citric.acid > 0.3375), data = filtered_wines_w)
+p4 <- quality_bar("Citric Acid", fw)
+p4 <- p4+geom_bar(color = 'green', fill = NA, linetype="dashed", data = filtered_wines_w)
+
+#ALCOHOL
+filtered2_wines_w<-filter_data(quote(alcohol > 12.40), data = filtered2_wines_w)
+fw <- filter_data(quote(alcohol > 12.40), data = filtered_wines_w)
+p5 <- quality_bar("Alcohol", fw)
+p5 <- p5+geom_bar(color = 'green', fill = NA, linetype="dashed", data = filtered_wines_w)
+
+p6 <- quality_bar("RS+CA", filtered2_wines_w)
+#p6 <- p6+geom_bar(color = 'green', fill = NA, linetype="dashed", data = filtered_wines_w)
+```
 
 # Univariate Analysis
 
-> **Tip**: Now that you've completed your univariate explorations, it's time to
-reflect on and summarize what you've found. Use the questions below to help you
-gather your observations and add your own if you have other thoughts!
-
 ### What is the structure of your dataset?
 
+There is one dependent variable quality describing the quality of the wine. The remaining variables are results of various chemical measurements. These variables all seem to follow normal distribution.
+
 ### What is/are the main feature(s) of interest in your dataset?
+
+Main feature of interest is clearly the quality of wine. This variable is effectively a ranking ranging from 0 (very bad) and 10 (very excellent). This dataset contains only wines with quality between 3 and 9.
+
+The interesting question is how is quality determined by the other variables.
 
 ### What other features in the dataset do you think will help support your \
 investigation into your feature(s) of interest?
 
+I have identified a number of variables (and their critical values) which allow me to distinguish wines >= 7 (quality 7 is good, 8 and 9 is excellent) from medium (5 and 6) and bad wines (below 5).
+
+1. chlorides < 0.037 (median for good wines)
+2. ratio.sulfur.dioxide > 0.2717 (median for good wines)
+3. density < 0.9918 (median for good wines)
+4. alcohol > 11.00 (3Q for medium) - NOT USED.
+
+I found the variables and values by inspecting the boxplots and looking at statistical summaries. By removing wines not meeting those characteristics (except alcohol) I have obtained a much smaller dataset of 374 wines (7.63% of total). In the filtered dataset the majority of wines is good  or excellent (44.39% and 9.36%). These proportions were much smaller in the original dataset (17.97% and 3.67%). This shows that the majority of bad and medium wines was removed.
+
+Repeating the analysis for filtered wines, I identified more options for filtering:
+
+1. residual.sugar > 2.6 (3Q medium) or > 4.212 (3Q good)
+2. total.sulfur.dioxide > 113.8 (3Q bad > 3Q medium)
+3. alcohol > 12.4 (3Q medium)
+4. citric.acid > 0.3375 (3Q good)
+
 ### Did you create any new variables from existing variables in the dataset?
 
-### Of the features you investigated, were there any unusual distributions? \
-Did you perform any operations on the data to tidy, adjust, or change the form \
-of the data? If so, why did you do this?
+Yes. I created an ordered factor rating witch is a simplified version of quality I have use ford plotting. The possible values are bad (quality < 5), medium (quality 5,6), good (quality 7) and excellent (quality >=8).
 
+I introduced ratio.sulfur.dioxide which a numeric variable whose value is free.sulfur.dioxide / total.sulfur.dioxide
+
+I also introduced an auxiliary variable filtering to draw before/after boxplots.
 
 # Bivariate Plots Section
 
@@ -112,7 +541,10 @@ supporting variables. Try to look at relationships between supporting variables
 as well.
 
 ```{r echo=FALSE, Bivariate_Plots}
+dw <-read.csv('wineQualityWhites.csv')
 
+cor_all <-cor(dw[,c(2:13)])
+cor_f <-cor(filtered_wines_w[,c(2:12, 15)])
 ```
 
 # Bivariate Analysis

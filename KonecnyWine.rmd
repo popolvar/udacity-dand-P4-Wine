@@ -501,7 +501,12 @@ There is one dependent variable quality describing the quality of the wine. The 
 
 ### What is/are the main feature(s) of interest in your dataset?
 
-Main feature of interest is clearly the quality of wine. This variable is effectively a ranking ranging from 0 (very bad) and 10 (very excellent). This dataset contains only wines with quality between 3 and 9.
+Main feature of interest is clearly the quality of wine. This variable is effectively a ranking ranging from 0 (very bad) and 10 (very excellent). This dataset contains only wines with quality between 3 and 9. However there are only very few wines of quality 3 and 9, and the most wines has the the quality 6, 5 and 7.
+
+```{r}
+table(wines_w$quality)
+```
+
 
 The interesting question is how is quality determined by the other variables.
 
@@ -524,9 +529,11 @@ Repeating the analysis for filtered wines, I identified more options for filteri
 3. alcohol > 12.4 (3Q medium)
 4. citric.acid > 0.3375 (3Q good)
 
+Experimenting with these additional step I ended up with only 17 wines: 5 bad, 11 medium and 6 excellent.
+
 ### Did you create any new variables from existing variables in the dataset?
 
-Yes. I created an ordered factor rating witch is a simplified version of quality I have use ford plotting. The possible values are bad (quality < 5), medium (quality 5,6), good (quality 7) and excellent (quality >=8).
+Yes. I created an ordered factor rating witch is a simplified version of quality I have use ford plotting. The possible values are bad (quality 3,4), medium (quality 5,6), good (quality 7) and excellent (quality 8,9).
 
 I introduced ratio.sulfur.dioxide which a numeric variable whose value is free.sulfur.dioxide / total.sulfur.dioxide
 
@@ -534,11 +541,60 @@ I also introduced an auxiliary variable filtering to draw before/after boxplots.
 
 # Bivariate Plots Section
 
-> **Tip**: Based on what you saw in the univariate plots, what relationships
-between variables might be interesting to look at in this section? Don't limit
-yourself to relationships between a main output feature and one of the
-supporting variables. Try to look at relationships between supporting variables
-as well.
+I have plotted the various variables (e.g. sulphates) against quality in scatterplots. To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for boxplot). I also plotted the some statistical summaries among the datapoints: median (red dot) and 1st and 3 quantile (blue dots). The datapoints were coloured according to their rating.
+
+In general scatterplots revealed more structure but mostly confirmed observations from boxplots. Take for example sulpahtes.
+
+```{r echo=FALSE}
+qwrap <- function(x,num){
+  return(quantile(x,probs = c(num))[[1]])
+}
+
+plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25){
+  #calculate the range between whiskers to plot
+  iqr1 <- IQR(var1)
+  md1 <- median(var1)
+  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+
+  p1 <- ggplot(aes(x = quality, y = var1, color = rating),
+                    data= data1)+
+               geom_point(alpha = alpha1, position = position_jitter(h=0))+
+               stat_summary(fun.y=median, colour="red", geom="point", size=2)+
+               stat_summary(fun.y=qwrap, fun.args = list(c(0.25)),
+                            colour="blue", geom="point", size=2)+
+               stat_summary(fun.y=qwrap, fun.args = list(c(0.75)),
+                            colour="blue", geom="point", size=2)+
+               coord_cartesian(ylim = r1)+
+               #only use the part after $ for label name
+               ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
+  
+  return(p1)
+}
+
+# nw <- names(wines_w)
+# scope <- c(2:12,15)
+# 
+# res <- list()
+# index <- 1
+# 
+# for(i in scope){
+#   pi <- plot_vs_rating(wines_w[, i])+
+#     ylab(nw[i])
+#   
+#   res <- list(res,pi)
+# }
+
+plot_vs_quality(wines_w$sulphates)
+```
+
+The majority of wines is of quality 5 to 7. There appears no clear patter linking suplhates to quality (and therefore rating). This is the case for most variables.
+
+The exceptions are the same I have identified from boxplots:
+
+1. chlorides < 0.037 (median for good wines)
+2. ratio.sulfur.dioxide > 0.2717 (median for good wines)
+3. density < 0.9918 (median for good wines)
+4. alcohol > 11.00 (3Q for medium) - NOT USED.
 
 ```{r echo=FALSE, Bivariate_Plots}
 dw <-read.csv('wineQualityWhites.csv')
@@ -551,6 +607,117 @@ cor_f <-cor(filtered_wines_w[,c(2:12, 15)])
 
 > **Tip**: As before, summarize what you found in your bivariate explorations
 here. Use the questions below to guide your discussion.
+```{r echo=FALSE}
+qwrap <- function(x,num){
+  return(quantile(x,probs = c(num))[[1]])
+}
+
+plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25){
+  iqr1 <- IQR(var1)
+  md1 <- median(var1)
+  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+
+  p1 <- ggplot(aes(x = quality, y = var1, color = rating),
+                    data= data1)+
+               geom_point(alpha = alpha1, position = position_jitter(h=0))+
+               stat_summary(fun.y=median, colour="red", geom="point", size=2)+
+               stat_summary(fun.y=qwrap, fun.args = list(c(0.25)),
+                            colour="blue", geom="point", size=2)+
+               stat_summary(fun.y=qwrap, fun.args = list(c(0.75)),
+                            colour="blue", geom="point", size=2)+
+               coord_cartesian(ylim = r1)+
+               #only use the part after $
+               ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
+  
+  return(p1)
+}
+
+names(wines_w)
+```
+
+```{r echo=FALSE}
+plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25){
+  iqr1 <- IQR(var1)
+  md1 <- median(var1)
+  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+
+  iqr2 <- IQR(var2)
+  md2 <- median(var2)
+  r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
+  
+  print(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
+  print(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])
+  
+  p1 <- ggplot(aes(x = alcohol , y = pH, color = rating),
+                    data= data1)+
+               geom_point(alpha = alpha1, position = position_jitter(h=0))+
+               coord_cartesian(ylim = r1)+
+               coord_cartesian(xlim = r2)+
+               #only use the part after $
+               ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+               xlab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])
+
+  return(p1)
+}
+```
+
+
+```{r echo=FALSE}
+
+# p1<-plot_vs_rating(wines_w$fixed.acidity)
+# p2<-plot_vs_rating(wines_w$volatile.acidity)
+# p3<-plot_vs_rating(wines_w$citric.acid)
+# p4<-plot_vs_rating(wines_w$residual.sugar)
+# p5<-plot_vs_rating(wines_w$chlorides)
+# 
+# p6<-plot_vs_rating(wines_w$free.sulfur.dioxide)
+# p7<-plot_vs_rating(wines_w$total.sulfur.dioxide)
+# p8<-plot_vs_rating(wines_w$ratio.sulfur.dioxide)
+# p9<-plot_vs_rating(wines_w$density)
+# p10<-plot_vs_rating(wines_w$pH)
+# 
+# p11<-plot_vs_rating(wines_w$sulphates)
+# p12<-plot_vs_rating(wines_w$alcohol)
+# 
+# list(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12)
+
+nw <- names(wines_w)
+scope <- c(2:12,15)
+
+res <- list()
+index <- 1
+
+for(i in scope){
+  pi <- plot_vs_rating(wines_w[, i])+
+    ylab(nw[i])
+  
+  res <- list(res,pi)
+}
+
+res
+```
+
+```{r}
+#plot_bivar(filtered_wines_w$volatile.acidity, filtered_wines_w$alcohol, data = filtered_wines_w)
+
+#plot_bivar(wines_w$volatile.acidity, wines_w$alcohol, data = wines_w, alpha = 0.2)
+
+#plot_vs_quality(wines_w$volatile.acidity, data = wines_w)
+
+#explore_var(wines_w$volatile.acidity)
+
+fw0 <- filter_data(quote(volatile.acidity < 0.26), data = filtered_wines_w)
+
+
+
+table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
+table(fw0$quality)/length(fw0$quality)
+
+# ggplot(aes(x = wines_w$alcohol , y = wines_w$volatile.acidity, color = rating), data= wines_w)+
+#   geom_point(alpha = 0.25, position = position_jitter(h=0))
+
+```
+
 
 ### Talk about some of the relationships you observed in this part of the \
 investigation. How did the feature(s) of interest vary with other features in \

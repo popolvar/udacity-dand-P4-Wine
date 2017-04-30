@@ -16,6 +16,7 @@ EXPLORING WINE QUALITY by STEFAN KONECNY
 
 library(ggplot2)
 library(gridExtra)
+library(scales)
 #library(GGally)
 ```
 
@@ -266,7 +267,8 @@ filter_data <- function(exp1, data1 = wines_w, verbose = FALSE){
 
 More importantly the distribution of the rating changed significantly as apparent from this grid plot. The dashed shape in the backgound shows the barplot with all the wines (before filtering).
 
-```{r echo=FALSE, Filtering_Wines_Stage_I}
+
+```{r}
 #filter_data(quote(wines_w$chlorides<0.037),verbose = TRUE)
 
 #before filtering
@@ -315,6 +317,8 @@ table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
 #(table(wines_w$quality) - table(filtered_wines_w$quality))/table(wines_w$quality)
 ```
 
+
+
 The original distribution is in the top left bar plot and the filtered one is in the bottom left one. The ratio of < 6 wines (short for wines with quality 6 and below) is much smaller. Wines with the lowest quality 3 were completely removed. The most frequent quality is now 7 (44.4%), whereas originally it was  6 (with 44.9%).
 
 More then 98.5% of < 6 wines were removed. 93% of 6's were removed in contrast to only 81% / 82% for 7/8's and only 40% of 9's.
@@ -336,7 +340,7 @@ baf_wines_w <- rbind(wines_w,filtered_wines_w)
 ```
 
 ```{r echo=FALSE}
-explore_filtering = function(var1, data1 = baf_wines_w, f1 = 'filtered'){
+explore_filtering <- function(var1, data1 = baf_wines_w, f1 = 'filtered'){
   
   #caculate the range in y for the filtered only
   dataf1 <-var1[data1$filtering == f1]
@@ -550,7 +554,7 @@ qwrap <- function(x,num){
   return(quantile(x,probs = c(num))[[1]])
 }
 
-plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25){
+plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25, show_leg = FALSE){
   #calculate the range between whiskers to plot
   iqr1 <- IQR(var1)
   md1 <- median(var1)
@@ -568,6 +572,11 @@ plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25){
                #only use the part after $ for label name
                ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
   
+  #remove legend
+  if(!show_leg){
+    p1<-p1+theme(legend.position="none")
+  }
+
   return(p1)
 }
 
@@ -587,7 +596,7 @@ plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25){
 plot_vs_quality(wines_w$sulphates)
 ```
 
-The majority of wines is of quality 5 to 7. There appears no clear patter linking suplhates to quality (and therefore rating). This is the case for most variables.
+The majority of wines is of quality 5 to 7. There appears no clear pattern linking suplhates to the quality (and therefore rating). This is the case for most variables apart from few exceptions.
 
 The exceptions are the same I have identified from boxplots:
 
@@ -596,138 +605,102 @@ The exceptions are the same I have identified from boxplots:
 3. density < 0.9918 (median for good wines)
 4. alcohol > 11.00 (3Q for medium) - NOT USED.
 
-```{r echo=FALSE, Bivariate_Plots}
-dw <-read.csv('wineQualityWhites.csv')
-
-cor_all <-cor(dw[,c(2:13)])
-cor_f <-cor(filtered_wines_w[,c(2:12, 15)])
-```
-
-# Bivariate Analysis
-
-> **Tip**: As before, summarize what you found in your bivariate explorations
-here. Use the questions below to guide your discussion.
 ```{r echo=FALSE}
-qwrap <- function(x,num){
-  return(quantile(x,probs = c(num))[[1]])
-}
+p1 <- plot_vs_quality(wines_w$chlorides)
+p1 <- p1 + geom_hline(yintercept = 0.037, color = "blue", linetype="dotted")
 
-plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25){
-  iqr1 <- IQR(var1)
-  md1 <- median(var1)
-  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+p2 <- plot_vs_quality(wines_w$ratio.sulfur.dioxide)
+p2 <- p2 + geom_hline(yintercept = 0.2717, color = "blue", linetype="dotted")
 
-  p1 <- ggplot(aes(x = quality, y = var1, color = rating),
-                    data= data1)+
-               geom_point(alpha = alpha1, position = position_jitter(h=0))+
-               stat_summary(fun.y=median, colour="red", geom="point", size=2)+
-               stat_summary(fun.y=qwrap, fun.args = list(c(0.25)),
-                            colour="blue", geom="point", size=2)+
-               stat_summary(fun.y=qwrap, fun.args = list(c(0.75)),
-                            colour="blue", geom="point", size=2)+
-               coord_cartesian(ylim = r1)+
-               #only use the part after $
-               ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
-  
-  return(p1)
-}
+p3 <- plot_vs_quality(wines_w$density)
+p3 <- p3 + geom_hline(yintercept = 0.9918, color = "blue", linetype="dotted")
 
-names(wines_w)
+p4 <- plot_vs_quality(wines_w$alcohol)
+p4 <- p4 + geom_hline(yintercept = 11.0, color = "blue", linetype="dotted")
+
+
+grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
 
-```{r echo=FALSE}
-plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25){
-  iqr1 <- IQR(var1)
-  md1 <- median(var1)
-  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+There is one more interesting case volatile acidity. In hindsight the trend was apparent in the boxplot/summary as well. But when I looked at the boxplot I was focused on discriminating bad and medium wines from good an excellent (as opposed to removing bad ones). 
 
-  iqr2 <- IQR(var2)
-  md2 <- median(var2)
-  r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
-  
-  print(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
-  print(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])
-  
-  p1 <- ggplot(aes(x = alcohol , y = pH, color = rating),
-                    data= data1)+
-               geom_point(alpha = alpha1, position = position_jitter(h=0))+
-               coord_cartesian(ylim = r1)+
-               coord_cartesian(xlim = r2)+
-               #only use the part after $
-               ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
-               xlab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])
-
-  return(p1)
-}
-```
-
-
-```{r echo=FALSE}
-
-# p1<-plot_vs_rating(wines_w$fixed.acidity)
-# p2<-plot_vs_rating(wines_w$volatile.acidity)
-# p3<-plot_vs_rating(wines_w$citric.acid)
-# p4<-plot_vs_rating(wines_w$residual.sugar)
-# p5<-plot_vs_rating(wines_w$chlorides)
-# 
-# p6<-plot_vs_rating(wines_w$free.sulfur.dioxide)
-# p7<-plot_vs_rating(wines_w$total.sulfur.dioxide)
-# p8<-plot_vs_rating(wines_w$ratio.sulfur.dioxide)
-# p9<-plot_vs_rating(wines_w$density)
-# p10<-plot_vs_rating(wines_w$pH)
-# 
-# p11<-plot_vs_rating(wines_w$sulphates)
-# p12<-plot_vs_rating(wines_w$alcohol)
-# 
-# list(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12)
-
-nw <- names(wines_w)
-scope <- c(2:12,15)
-
-res <- list()
-index <- 1
-
-for(i in scope){
-  pi <- plot_vs_rating(wines_w[, i])+
-    ylab(nw[i])
-  
-  res <- list(res,pi)
-}
-
-res
-```
+Anyhow adding filtering by volatile acidity would not improving filtering. Actually it would make things much worse. Removing wines through filtering is very delicate trial and error procedure. One has to be carefull not to remove too many wines.
 
 ```{r}
-#plot_bivar(filtered_wines_w$volatile.acidity, filtered_wines_w$alcohol, data = filtered_wines_w)
-
-#plot_bivar(wines_w$volatile.acidity, wines_w$alcohol, data = wines_w, alpha = 0.2)
-
-#plot_vs_quality(wines_w$volatile.acidity, data = wines_w)
-
-#explore_var(wines_w$volatile.acidity)
-
-fw0 <- filter_data(quote(volatile.acidity < 0.26), data = filtered_wines_w)
-
-
-
-table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
-table(fw0$quality)/length(fw0$quality)
-
-# ggplot(aes(x = wines_w$alcohol , y = wines_w$volatile.acidity, color = rating), data= wines_w)+
-#   geom_point(alpha = 0.25, position = position_jitter(h=0))
-
+p1 <- plot_vs_quality(wines_w$volatile.acidity)
+p1 <- p1 + geom_hline(yintercept = 0.26, color = "blue", linetype="dotted")
+p1
 ```
 
+I have also calculated the Pearson's R between quality and the other variables. Interestingly the four variables with the strongest correlation (in a absolute terms) are the same I have found through box plot investigation:
+
+1. alcohol
+2. density
+3. chlorides
+4. ratio.sulfur.dioxide
+
+```{r echo=FALSE}
+cor_all <-cor(wines_w[13],wines_w[,c(2:12,15)])
+
+#cor_f <-cor(filtered_wines_w[13],filtered_wines_w[,c(2:13,15)])
+
+rel_cor <- cor_all[,abs(cor_all) > 0.15]
+
+rel_cor[order(abs(rel_cor), decreasing = TRUE)]
+```
+
+Even the +/-sign of correlation agrees with the sign of filtering (above or below a given value). This might be a coincidence. Except for alcohol (and perhaps density) to correlations are quite weak. 
+
+On the other hand, the aim of filtering is to remove low quality wines, which dominate the distribution. Therefore even variables with relativelly low correlation with quality, could be good candidates for filtrering.
+
+I also looked at the corellation between these variables:
+
+```{r echo=FALSE}
+mn <- names(rel_cor)
+cor(wines_w[, mn])
+```
+
+Alcohol and density show a very strong correlation. Density is moderately correlated with total.sulfur.dioxide. The correlation between alcohol and total total.sulfur.dioxide is a bit weaker.
+
+# Bivariate Analysis
 
 ### Talk about some of the relationships you observed in this part of the \
 investigation. How did the feature(s) of interest vary with other features in \
 the dataset?
 
+I have plotted variables against quality and mostly confirmed the insight from box plots.
+
+What I found quite interesting is that correlation coefficients (with wine quality) quite clearly pointed to the same variables I identified via box plots analysis. This makes sense for variables showing strong correlation. But even variables with weak correlation (bellow 0.2) can be used for filtering.
+
+```{r echo=FALSE}
+fw<-filter_data(quote(chlorides<0.037))
+fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = fw)
+p1 <- quality_bar("Chlorides+RatioSulfur", fw)
+
+fw <-filter_data(quote(alcohol>12.4))
+p2 <- quality_bar("Alcohol", fw)
+
+fw<-filter_data(quote(density<0.9918), data = fw)
+p3 <- quality_bar("Alc+Density", fw)
+
+fw<-filter_data(quote(chlorides<0.037), data = fw)
+fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = fw)
+
+p4 <- quality_bar("All", fw)
+
+grid.arrange(p1, p2, p3, p4, ncol=2)
+```
+
+The correlation coefficients allowed me to judge the strength  of correlations. Alcohol has the strongest correlation with quality (0.44). Density comes next with -0.31.
+
 ### Did you observe any interesting relationships between the other features \
 (not the main feature(s) of interest)?
 
+Alcohol and density show a very strong correlation (-0.78). Density is moderately correlated with total.sulfur.dioxide (0.53). The correlation between alcohol and total total.sulfur.dioxide is a bit weaker (-0.45).
+
 ### What was the strongest relationship you found?
 
+The negative correlation between alcohol and density is clearly the strongest one.
 
 # Multivariate Plots Section
 
@@ -738,9 +711,77 @@ create here are justified by the plots you explored in the previous section. If
 you plan on creating any mathematical models, this is the section where you
 will do that.
 
-```{r echo=FALSE, Multivariate_Plots}
+```{r echo=FALSE}
+plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25, show_leg = FALSE){
+  iqr1 <- IQR(var1)
+  md1 <- median(var1)
+  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+
+  iqr2 <- IQR(var2)
+  md2 <- median(var2)
+  r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
+  
+  p1 <- ggplot(aes(x = var1 , y = var2, color = rating),
+                    data= data1)+
+               #geom_point(aes(size = (alcohol -10)*2), alpha = alpha1, position = position_jitter(h=0))+
+               geom_point(aes(alpha = alpha1))+
+               #coord_cartesian(xlim = r1)+
+               #coord_cartesian(ylim = r2)+
+               #only use the part after $
+               xlab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+               ylab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])
+  
+  return(p1)
+}
+```
+
+
+```{r echo=FALSE}
+plot_bivar(wines_w$alcohol, wines_w$density)
+plot_bivar(wines_w$alcohol, wines_w$total.sulfur.dioxide)
+
+plot_bivar(wines_w$alcohol, wines_w$chlorides)
+
+plot_bivar(wines_w$volatile.acidity, wines_w$ratio.sulfur.dioxide)#+
+  #coord_cartesian(xlim = c(0.1,0.6))
+
+
+plot_bivar(wines_w$density, wines_w$total.sulfur.dioxide)#+
+  #coord_cartesian(xlim = c(0.988,1.001), ylim = c(50,250))
+
+plot_bivar(wines_w$density, wines_w$chlorides)#+
+  #coord_cartesian(xlim = c(0.988,1.001), ylim = c(0.01, 0.075))
 
 ```
+
+
+```{r echo=FALSE}
+cor_f <-cor(filtered_wines_w[13],filtered_wines_w[,c(2:12,15)])
+cor_f[,abs(cor_f) > 0.2]
+
+cor_f
+
+#cor(filtered_wines_w[4],filtered_wines_w[,c(2:12,15)])
+```
+
+I will later also calculate the corellation between these variable to identifies suitable pairings for multivariete plotting. It would be interesting  to pick two variables with strong negative correlation.
+
+```{r echo=FALSE}
+mn <- names(cor_f[,abs(cor_f) > 0.2])
+cor(filtered_wines_w[, mn])
+
+plot_bivar(filtered_wines_w$residual.sugar, filtered_wines_w$total.sulfur.dioxide,
+           data = filtered_wines_w)
+plot_bivar(filtered_wines_w$residual.sugar, filtered_wines_w$alcohol,
+           data = filtered_wines_w)
+plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$total.sulfur.dioxide,
+           data = filtered_wines_w)
+
+plot_bivar(filtered_wines_w$citric.acid, filtered_wines_w$volatile.acidity,
+           data = filtered_wines_w)+
+  coord_cartesian(xlim = c(0.1,0.6))
+```
+
 
 # Multivariate Analysis
 

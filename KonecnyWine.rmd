@@ -719,25 +719,33 @@ I started with plotting the variable pairings identified in the previous section
 The plot confirm the trends I already know, e.i. high alcohol and low density wines tend to have higher quality. However bad quality wines are also scattered over the plot.  
 
 ```{r echo=FALSE}
-plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE){
-  iqr1 <- IQR(var1)
-  md1 <- median(var1)
-  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
-
-  iqr2 <- IQR(var2)
-  md2 <- median(var2)
-  r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
-  
+plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE, remove_outliers = TRUE){
   p1 <- ggplot(aes(x = var1 , y = var2, color = rating, alpha = rating),
                     data= data1)+
                geom_point()+
                #geom_point(aes(size = (alcohol -10)*2), alpha = alpha1, position = position_jitter(h=0))+
-               coord_cartesian(xlim = r1)+
-               coord_cartesian(ylim = r2)+
                #only use the part after $
                xlab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
                ylab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])+
-               scale_alpha_manual(values = c(0.7,0.1,0.3,0.7))
+               scale_alpha_manual(values = c(0.7,0.2,0.4,0.7))
+  
+  if(remove_outliers){
+    #calculate IQRs
+    iqr1 <- IQR(var1)
+    md1 <- median(var1)
+    r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+
+    iqr2 <- IQR(var2)
+    md2 <- median(var2)
+    r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
+  
+    #p1<- p1+coord_cartesian(xlim = r1, ylim = r2)
+    
+    #strangely not the same result as the commented line above!
+    p1<- p1+coord_cartesian(xlim = r1)
+    p1<- p1+coord_cartesian(ylim = r2)
+  }
+  
   return(p1)
 }
 ```
@@ -764,17 +772,14 @@ plot_bivar(wines_w$density, wines_w$chlorides)+
 
 ```{r echo=FALSE}
 cor_f <-cor(filtered_wines_w[13],filtered_wines_w[,c(2:12,15)])
-cor_f[,abs(cor_f) > 0.2]
-
-cor_f
-
-#cor(filtered_wines_w[4],filtered_wines_w[,c(2:12,15)])
+cor_f <-cor_f[,abs(cor_f) > 0.10]
+cor_f[order(abs(cor_f), decreasing = TRUE)]
 ```
 
 I will later also calculate the corellation between these variable to identifies suitable pairings for multivariete plotting. It would be interesting  to pick two variables with strong negative correlation.
 
 ```{r echo=FALSE}
-mn <- names(cor_f[,abs(cor_f) > 0.2])
+mn <- names(cor_f)
 cor(filtered_wines_w[, mn])
 
 plot_bivar(filtered_wines_w$residual.sugar, filtered_wines_w$total.sulfur.dioxide,

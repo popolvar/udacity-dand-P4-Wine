@@ -725,16 +725,16 @@ plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25, show_leg = FA
   md2 <- median(var2)
   r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
   
-  p1 <- ggplot(aes(x = var1 , y = var2, color = rating),
+  p1 <- ggplot(aes(x = var1 , y = var2, color = rating, alpha = rating),
                     data= data1)+
+               geom_point()+
                #geom_point(aes(size = (alcohol -10)*2), alpha = alpha1, position = position_jitter(h=0))+
-               scale_alpha_discrete(range = c(0.5, 0.1, 0.5, 0.5))
                coord_cartesian(xlim = r1)+
                coord_cartesian(ylim = r2)+
                #only use the part after $
                xlab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
-               ylab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])
-  
+               ylab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])+
+               scale_alpha_manual(values = c(1.0,0.2,0.7,1.0))
   return(p1)
 }
 ```
@@ -742,6 +742,7 @@ plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25, show_leg = FA
 
 ```{r echo=FALSE}
 plot_bivar(wines_w$alcohol, wines_w$density)
+
 plot_bivar(wines_w$alcohol, wines_w$total.sulfur.dioxide)
 
 plot_bivar(wines_w$alcohol, wines_w$chlorides)
@@ -755,7 +756,6 @@ plot_bivar(wines_w$density, wines_w$total.sulfur.dioxide)+
 
 plot_bivar(wines_w$density, wines_w$chlorides)+
   coord_cartesian(xlim = c(0.988,1.001), ylim = c(0.01, 0.075))
-
 ```
 
 

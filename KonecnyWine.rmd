@@ -16,7 +16,7 @@ EXPLORING WINE QUALITY by STEFAN KONECNY
 
 library(ggplot2)
 library(gridExtra)
-library(scales)
+#library(scales)
 #library(GGally)
 ```
 
@@ -77,7 +77,13 @@ quality_bar<-function(title, data1 = wines_w, show_leg = FALSE, show_all_hist = 
   return(p1)
 }
 
-quality_bar("Name", show_all_hist = FALSE)                    
+p1 <-quality_bar("Name", show_all_hist = FALSE)
+p1
+```
+
+```{r, echo=FALSE}
+g <- ggplot_build(p1)
+used_cols<-unique(g$data[[1]]["fill"])[[1]]
 ```
 
 Quality and Rating are the only two factor variables. The remaining variables are numerical.
@@ -449,10 +455,12 @@ However I was not able to complete remove bad wines with simple pruning describe
 fw1 <- filter_data(quote(residual.sugar > 4.212 & total.sulfur.dioxide > 113.8 &
                           alcohol > 12.4), data = filtered_wines_w)
 p1 <- quality_bar("No C.A.", fw1)
+p1 <- p1 + scale_fill_manual(values = used_cols[2:4])
 
 fw0 <- filter_data(quote(citric.acid > 0.3375), data = fw1)
 p0  <- quality_bar("All", fw0)
 p0  <- p0+geom_bar(color = 'green', fill = NA, linetype="dashed", data = fw1)
+p0  <- p0+scale_fill_manual(values = used_cols[2:4])
 
 grid.arrange(p0, p1, ncol=2)
 ```
@@ -687,6 +695,7 @@ fw<-filter_data(quote(chlorides<0.037), data = fw)
 fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = fw)
 
 p4 <- quality_bar("All", fw)
+p4 <- p4+scale_fill_manual(values = used_cols[2:4])
 
 grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
@@ -704,12 +713,7 @@ The negative correlation between alcohol and density is clearly the strongest on
 
 # Multivariate Plots Section
 
-> **Tip**: Now it's time to put everything together. Based on what you found in
-the bivariate plots section, create a few multivariate plots to investigate
-more complex interactions between variables. Make sure that the plots that you
-create here are justified by the plots you explored in the previous section. If
-you plan on creating any mathematical models, this is the section where you
-will do that.
+
 
 ```{r echo=FALSE}
 plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25, show_leg = FALSE){
@@ -724,9 +728,9 @@ plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25, show_leg = FA
   p1 <- ggplot(aes(x = var1 , y = var2, color = rating),
                     data= data1)+
                #geom_point(aes(size = (alcohol -10)*2), alpha = alpha1, position = position_jitter(h=0))+
-               geom_point(aes(alpha = alpha1))+
-               #coord_cartesian(xlim = r1)+
-               #coord_cartesian(ylim = r2)+
+               scale_alpha_discrete(range = c(0.5, 0.1, 0.5, 0.5))
+               coord_cartesian(xlim = r1)+
+               coord_cartesian(ylim = r2)+
                #only use the part after $
                xlab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
                ylab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])
@@ -742,15 +746,15 @@ plot_bivar(wines_w$alcohol, wines_w$total.sulfur.dioxide)
 
 plot_bivar(wines_w$alcohol, wines_w$chlorides)
 
-plot_bivar(wines_w$volatile.acidity, wines_w$ratio.sulfur.dioxide)#+
-  #coord_cartesian(xlim = c(0.1,0.6))
+plot_bivar(wines_w$volatile.acidity, wines_w$ratio.sulfur.dioxide)+
+  coord_cartesian(xlim = c(0.1,0.6))
 
 
-plot_bivar(wines_w$density, wines_w$total.sulfur.dioxide)#+
-  #coord_cartesian(xlim = c(0.988,1.001), ylim = c(50,250))
+plot_bivar(wines_w$density, wines_w$total.sulfur.dioxide)+
+  coord_cartesian(xlim = c(0.988,1.001), ylim = c(50,250))
 
-plot_bivar(wines_w$density, wines_w$chlorides)#+
-  #coord_cartesian(xlim = c(0.988,1.001), ylim = c(0.01, 0.075))
+plot_bivar(wines_w$density, wines_w$chlorides)+
+  coord_cartesian(xlim = c(0.988,1.001), ylim = c(0.01, 0.075))
 
 ```
 

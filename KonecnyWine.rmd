@@ -455,7 +455,8 @@ However I was not able to complete remove bad wines with simple pruning describe
 fw1 <- filter_data(quote(residual.sugar > 4.212 & total.sulfur.dioxide > 113.8 &
                           alcohol > 12.4), data = filtered_wines_w)
 p1 <- quality_bar("No C.A.", fw1)
-p1 <- p1 + scale_fill_manual(values = used_cols[2:4])
+p1 <- p1+geom_bar(color = 'green', fill = NA, linetype="dashed", data = fw1)
+p1 <- p1+scale_fill_manual(values = used_cols[2:4])
 
 fw0 <- filter_data(quote(citric.acid > 0.3375), data = fw1)
 p0  <- quality_bar("All", fw0)
@@ -713,10 +714,12 @@ The negative correlation between alcohol and density is clearly the strongest on
 
 # Multivariate Plots Section
 
+I started with plotting the variable pairings identified in the previous section. I have removed the outliers (lying outside of IQR) and scalled the axis to focus on the majority of data points. I have also customized the alpha value decreasing alpha for medium (forming the overwhelming majority) and increasing the alpha for rare bad and excellent wines.
 
+The plot confirm the trends I already know, e.i. high alcohol and low density wines tend to have higher quality. However bad quality wines are also scattered over the plot.  
 
 ```{r echo=FALSE}
-plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25, show_leg = FALSE){
+plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE){
   iqr1 <- IQR(var1)
   md1 <- median(var1)
   r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
@@ -734,7 +737,7 @@ plot_bivar <- function(var1, var2, data1 = wines_w, alpha1 = 0.25, show_leg = FA
                #only use the part after $
                xlab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
                ylab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])+
-               scale_alpha_manual(values = c(1.0,0.2,0.7,1.0))
+               scale_alpha_manual(values = c(0.7,0.1,0.3,0.7))
   return(p1)
 }
 ```

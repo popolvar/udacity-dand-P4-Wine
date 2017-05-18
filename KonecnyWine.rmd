@@ -98,7 +98,7 @@ The value range for all variables is quite narrow and similar for all ratings. T
 
 Let me start with factoring alcohol and pH through rating. Will set the scale to 'free_y' so the less frequent rating are not flattened.
 
-```{r echo=FALSE, Univariate_Plots_Alcohol_facet_Rating}
+```{r echo=FALSE, message = FALSE, Univariate_Plots_Alcohol_facet_Rating}
 
 ggplot(aes(x = alcohol, fill = rating), data = wines_w) +
   geom_histogram(color = 'gray') +
@@ -110,7 +110,7 @@ ggplot(aes(x = alcohol, fill = rating), data = wines_w) +
   facet_wrap(~rating, scale = 'free_y') 
 ```
 
-```{r echo=FALSE, Univariate_Plots_pH_facet_Rating}
+```{r echo=FALSE,  message = FALSE, Univariate_Plots_pH_facet_Rating}
 ggplot(aes(x = pH, fill = rating), data = wines_w) +
   geom_histogram(color = 'gray') +
   facet_wrap(~rating, scale = 'free_y') 
@@ -178,13 +178,13 @@ Some of the variable considered below revealed interesting trends. Namely **chlo
 ###Chlorides
  
 ```{r echo=FALSE}
-res_var[2]
+res_var[[2]]
 ```
 
 This plot suggests that the median for good and excellent wines is less the the first quartile for medium and bad wines. This means that good wines are statistically more likely to have lower value of chlorides then bad ones. The summary confirms this.
 
-```{r}
-res_var[3]
+```{r echo=FALSE}
+res_var[[3]]
 ```
 
 So if I would discard all wines with chlorides above 0.03700 (the median for good wines), I would discard majority of bad and medium wines and still keep a significant proportion of good and excellent ones.
@@ -197,24 +197,24 @@ Another observation is that value for all quartiles and the mean decrases with r
 
 For free.sulfur.dioxide boxplot reveals a promise of a trend allowing me to discard some bad wines.
 
-```{r}
-explore_var(wines_w$free.sulfur.dioxide)[2]
+```{r echo=FALSE}
+explore_var(wines_w$free.sulfur.dioxide)[[2]]
 ```
 
 Interesting the ratio of free and total sulfur dioxide reveals an even clearer trend. This is true despite of the total sulfur dioxide not showing a strong trend on its own.
 
-```{r}
-explore_var(wines_w$free.sulfur.dioxide)[2]
+```{r echo=FALSE}
+explore_var(wines_w$free.sulfur.dioxide)[[2]]
 
-explore_var(wines_w$total.sulfur.dioxide)[2]
+explore_var(wines_w$total.sulfur.dioxide)[[2]]
 
-explore_var(wines_w$ratio.sulfur.dioxide)[2]
+explore_var(wines_w$ratio.sulfur.dioxide)[[2]]
 ```
 
 Once again I validate this insight by inspecting the the statistical summary.
 
-```{r}
-explore_var(wines_w$ratio.sulfur.dioxide)[3]
+```{r echo=FALSE}
+explore_var(wines_w$ratio.sulfur.dioxide)[[3]]
 ```
 
 In this case median of good wines is above the 3rd Quartile of bad wines. And this allows me to filter out large majority of bad wines. 
@@ -225,8 +225,8 @@ Similarly to the chlorides all Quartiles and the mean follow a clear (this time 
 
 I did the same analysis for density.
 
-```{r}
-explore_var(wines_w$density)[3]
+```{r echo=FALSE}
+explore_var(wines_w$density)[[3]]
 ```
 
 This time median for good and excellent wines is bellow the first quartile for medium and bad ones. So I can again discard some medium and bad wines as with chlorides.
@@ -235,8 +235,8 @@ In this case the quantiles and mean do not follow a clear trend w.r.t to rating.
 
 ###Alcohol
 
-```{r}
-explore_var(wines_w$alcohol)[3]
+```{r echo=FALSE}
+explore_var(wines_w$alcohol)[[3]]
 ```
 
 Alcohol content almost follows a growing trend for quantiles and mean w.r.t ratio. I decided not to filter out wines with low alcohol content, since alcohol content is typically known to the consumer (unlike the other investigated variables). Hence  removing wines with low alcohol volume may reduce choices for consumer with this preference.
@@ -274,7 +274,7 @@ filter_data <- function(exp1, data1 = wines_w, verbose = FALSE){
 More importantly the distribution of the rating changed significantly as apparent from this grid plot. The dashed shape in the backgound shows the barplot with all the wines (before filtering).
 
 
-```{r}
+```{r echo=FALSE}
 #filter_data(quote(wines_w$chlorides<0.037),verbose = TRUE)
 
 #before filtering
@@ -308,11 +308,11 @@ grid.arrange(p0, p1, p2, p3, p4, ncol=2)
 #table(wines_w$rating)/length(wines_w$rating)
 #table(filtered_wines_w$rating)/length(filtered_wines_w$rating)
 
-print("All wines")
-table(wines_w$quality)/length(wines_w$quality)
+#print("All wines")
+#table(wines_w$quality)/length(wines_w$quality)
 
-print("After Filtering")
-table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
+#print("After Filtering")
+#table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
 
 #table(wines_w$quality)
 #table(filtered_wines_w$quality)
@@ -323,7 +323,17 @@ table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
 #(table(wines_w$quality) - table(filtered_wines_w$quality))/table(wines_w$quality)
 ```
 
+Distribution of wines before filtering
 
+```{r echo=FALSE}
+table(wines_w$quality)/length(wines_w$quality)
+```
+
+Distribution of wines after filtering
+
+```{r echo=FALSE}
+table(filtered_wines_w$quality)/length(filtered_wines_w$quality)
+```
 
 The original distribution is in the top left bar plot and the filtered one is in the bottom left one. The ratio of < 6 wines (short for wines with quality 6 and below) is much smaller. Wines with the lowest quality 3 were completely removed. The most frequent quality is now 7 (44.4%), whereas originally it was  6 (with 44.9%).
 
@@ -681,26 +691,6 @@ I have plotted variables against quality and mostly confirmed the insight from b
 
 What I found quite interesting is that correlation coefficients (with wine quality) quite clearly pointed to the same variables I identified via box plots analysis. This makes sense for variables showing strong correlation. But even variables with weak correlation (bellow 0.2) can be used for filtering.
 
-```{r echo=FALSE}
-fw<-filter_data(quote(chlorides<0.037))
-fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = fw)
-p1 <- quality_bar("Chlorides+RatioSulfur", fw)
-
-fw <-filter_data(quote(alcohol>12.4))
-p2 <- quality_bar("Alcohol", fw)
-
-fw<-filter_data(quote(density<0.9918), data = fw)
-p3 <- quality_bar("Alc+Density", fw)
-
-fw<-filter_data(quote(chlorides<0.037), data = fw)
-fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = fw)
-
-p4 <- quality_bar("All", fw)
-p4 <- p4+scale_fill_manual(values = used_cols[2:4])
-
-grid.arrange(p1, p2, p3, p4, ncol=2)
-```
-
 The correlation coefficients allowed me to judge the strength  of correlations. Alcohol has the strongest correlation with quality (0.44). Density comes next with -0.31.
 
 ### Did you observe any interesting relationships between the other features \
@@ -714,15 +704,15 @@ The negative correlation between alcohol and density is clearly the strongest on
 
 # Multivariate Plots Section
 
-I started with plotting the variable pairings identified in the previous section. I have removed the outliers (lying outside of IQR) and scalled the axis to focus on the majority of data points. I have also customized the alpha value decreasing alpha for medium (forming the overwhelming majority) and increasing the alpha for rare bad and excellent wines.
+I started with plotting the variable pairings identified in the previous section. I have removed the outliers (lying outside of the IQR) and scaled the axis to focus on the majority of data points. I have also customized the alpha value decreasing alpha for medium (forming the overwhelming majority) and increasing the alpha for bad and excellent wines (which are rare).
 
-The plot confirm the trends I already know, e.i. high alcohol and low density wines tend to have higher quality. However bad quality wines are also scattered over the plot.  
+The plot confirms the trends I already know, e.i. high alcohol and low density wines tend to have higher quality. However bad quality wines are also scattered over the plot.  
 
 ```{r echo=FALSE}
 plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE, remove_outliers = TRUE){
-  p1 <- ggplot(aes(x = var1 , y = var2, color = rating, alpha = rating),
+  p1 <- ggplot(aes(x = var1 , y = var2),
                     data= data1)+
-               geom_point()+
+               geom_point(aes(color = rating, alpha = rating))+
                #geom_point(aes(size = (alcohol -10)*2), alpha = alpha1, position = position_jitter(h=0))+
                #only use the part after $
                xlab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
@@ -746,13 +736,19 @@ plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE, remove_out
     p1<- p1+coord_cartesian(ylim = r2)
   }
   
+  if(!show_leg){
+    p1<-p1+theme(legend.position="none")
+  }
+  
   return(p1)
 }
 ```
 
 
 ```{r echo=FALSE}
-plot_bivar(wines_w$alcohol, wines_w$density)
+plot_bivar(wines_w$alcohol, wines_w$density, remove_outliers = TRUE)#+
+  #coord_cartesian(xlim = c(8.0,9.0), ylim = c(0.99,1.005))
+  #coord_cartesian(xlim = c(12.5,14.5), ylim = c(0.985,0.995))
 
 plot_bivar(wines_w$alcohol, wines_w$total.sulfur.dioxide)
 
@@ -769,29 +765,87 @@ plot_bivar(wines_w$density, wines_w$chlorides)+
   coord_cartesian(xlim = c(0.988,1.001), ylim = c(0.01, 0.075))
 ```
 
+The plots are still very noisy and dominated by medium wines (green). Next I decided to focus only on filtered wines. I will repeat the same analysis as before. First I calculate Pearson's R between quality and other variables and quality, this time considering only the filtered wines.
 
 ```{r echo=FALSE}
 cor_f <-cor(filtered_wines_w[13],filtered_wines_w[,c(2:12,15)])
-cor_f <-cor_f[,abs(cor_f) > 0.10]
+cor_f <-cor_f[,abs(cor_f)>0.00]
+
 cor_f[order(abs(cor_f), decreasing = TRUE)]
 ```
 
-I will later also calculate the corellation between these variable to identifies suitable pairings for multivariete plotting. It would be interesting  to pick two variables with strong negative correlation.
+The resulting list is very different from the one for all wines described previously.
 
 ```{r echo=FALSE}
-mn <- names(cor_f)
-cor(filtered_wines_w[, mn])
+rel_cor[order(abs(rel_cor), decreasing = TRUE)]
+```
+
+There are very few similarities in the two lists. In both alcohol shows the strongest correlation with quality. For filtered wines the difference between alcohol and the second best variable (residual sugar) is very small.
+
+Accidentally both list have three entries with correlation above 0.2 in (absolute terms). But for filtered wines the correlation drops much quicker. I start with the top three variables for filtered wines (alcohol, residual.sugar, total.sulfur.dioxide) against each other.
+
+```{r echo=FALSE}
 
 plot_bivar(filtered_wines_w$residual.sugar, filtered_wines_w$total.sulfur.dioxide,
            data = filtered_wines_w)
-plot_bivar(filtered_wines_w$residual.sugar, filtered_wines_w$alcohol,
-           data = filtered_wines_w)
+
+plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$residual.sugar,
+           data = filtered_wines_w)+
+  coord_cartesian(ylim = c(0,8.0))
+
+
 plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$total.sulfur.dioxide,
            data = filtered_wines_w)
+```
 
-plot_bivar(filtered_wines_w$citric.acid, filtered_wines_w$volatile.acidity,
-           data = filtered_wines_w)+
-  coord_cartesian(xlim = c(0.1,0.6))
+The plot of residual.sugar against total.sulfur.dioxide reveals an area dominated by good and excellent wines (where residual sugar is between 3 and 9). Next I will zoom into this section of the plot. I will also visualize two additional variables through size and shape.
+
+In plot below size corresponds to alcohol and shape to pH. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines. On the contrary, I have established that medium and excellent wines can be very similar  (plotted against a red background).
+
+```{r echo=FALSE}
+  var1 <- filtered_wines_w$residual.sugar
+  var2 <- filtered_wines_w$total.sulfur.dioxide
+
+  p1 <- ggplot(aes(x = var1, y = var2),
+                    data= filtered_wines_w)
+  
+  p1 <- p1 + annotate("rect", xmin = 8, ymin = 105, xmax = 8.5, ymax = 120,
+                      fill = "red", alpha = 0.2)
+  
+  p1 <- p1 + annotate("rect", xmin = 3.35, ymin = 85, xmax = 3.75, ymax = 100,
+                      fill = "red", alpha = 0.2)
+  
+  p1 <- p1 + annotate("rect", xmin = 4.4, ymin = 130, xmax = 4.85, ymax = 147,
+                      fill = "red", alpha = 0.2)
+  
+  p1 <- p1 + geom_point(aes(color = rating, alpha = rating, size = alcohol,
+                              shape = cut(pH, breaks = 6)))+
+               xlab("residual.sugar")+
+               ylab("total.sulfur.dioxide")+
+               scale_alpha_manual(values = c(0.7,0.2,0.4,0.7))+
+               scale_size(range = c(1,6))+
+               labs(shape="pH (level)")
+                
+  
+  #calculate IQRs
+  iqr1 <- IQR(var1)
+  md1 <- median(var1)
+  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+
+  iqr2 <- IQR(var2)
+  md2 <- median(var2)
+  r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
+  
+  #strangely the plot for 
+  #p1<- p1+coord_cartesian(xlim = r1, ylim = r2)
+    
+  #is different from the plot
+  #p1<- p1+coord_cartesian(xlim = r1)
+  #p1<- p1+coord_cartesian(ylim = r2)
+  
+  p_final <- p1+coord_cartesian(xlim = c(3.0,9.0))
+
+  p_final
 ```
 
 
@@ -801,10 +855,41 @@ plot_bivar(filtered_wines_w$citric.acid, filtered_wines_w$volatile.acidity,
 investigation. Were there features that strengthened each other in terms of \
 looking at your feature(s) of interest?
 
+Once again I have mostly confirmed trends from my previous investigation.
+
+It was very interesting to see how the importance of features has changed when considering only the filtered wines. In hindsight, it was to be expected. When I removed many wines based on a particular feature, one could expect that this feature will become less important. 
+
+Yet I found the extent of this surprising. Density and chlorides are the features least correlate with quality in the filtered dataset. Prior to fitlering, they were the most correlated features only (after alcohol). 
+
+The plot below nicelly shows the difference between the two data sets. The plot for all wines shows a linear tendency, while the plot for filtetered wines is more scattered.
+
+```{r echo=FALSE}
+p0 <- plot_bivar(wines_w$alcohol, wines_w$density, show_leg = FALSE)
+p0 <- p0 + ggtitle("All wines [vs density]")
+
+
+p1 <- plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$residual.sugar,
+           data = filtered_wines_w, show_leg = FALSE)+
+  coord_cartesian(xlim = c(8,14), ylim = c(0.0,7.5))
+p1 <- p1 + ggtitle("Filtered wines [vs residual.sugar]")
+
+
+grid.arrange(p0, p1, ncol=1, top = "Strongest correlations")
+```
+
+
+It is remarkable how strongly alcohol correlates with quality. I would be curious to know whether this is because of poor quality wines have little alcohol. Or becuase the high alcohol content numbs the finer distinctions beween wines.
+
 ### Were there any interesting or surprising interactions between features?
+
+I was curious whether I can find a reliable way to tell apart medium, good and excellent wines. This is not the case. It was really interesting to see how very similar are two wines which significantly differ in quality.
 
 ### OPTIONAL: Did you create any models with your dataset? Discuss the \
 strengths and limitations of your model.
+
+I choose to create no models. The main reason is that quality (the target variable) is ultimately a factor variable, albeit expressed on a numeric scale. Ultimately it is a subjective judgement of three juror on a limited scale. 
+
+Base on my investigation I am sceptical about finding an objective and universal  relationship between the measured variables and assigned quality. 
 
 ------
 
@@ -820,7 +905,20 @@ make sure you justify why you chose each plot by describing what it shows.
 
 ### Plot One
 ```{r echo=FALSE, Plot_One}
+p1 <- plot_vs_quality(wines_w$chlorides)
+p1 <- p1 + geom_hline(yintercept = 0.037, color = "blue", linetype="dotted")
 
+p2 <- plot_vs_quality(wines_w$ratio.sulfur.dioxide)
+p2 <- p2 + geom_hline(yintercept = 0.2717, color = "blue", linetype="dotted")
+
+p3 <- plot_vs_quality(wines_w$density)
+p3 <- p3 + geom_hline(yintercept = 0.9918, color = "blue", linetype="dotted")
+
+p4 <- plot_vs_quality(wines_w$alcohol)
+p4 <- p4 + geom_hline(yintercept = 11.0, color = "blue", linetype="dotted")
+
+
+grid.arrange(p1, p2, p3, p4, ncol=2)
 ```
 
 ### Description One
@@ -828,15 +926,90 @@ make sure you justify why you chose each plot by describing what it shows.
 
 ### Plot Two
 ```{r echo=FALSE, Plot_Two}
+#filter_data(quote(wines_w$chlorides<0.037),verbose = TRUE)
 
+#before filtering
+p0 <-quality_bar("All")
+
+draw_siluette = TRUE
+
+#filter chlorides <0.037 <0.0355
+filtered_wines_w<-filter_data(quote(chlorides<0.037))
+fw<-filter_data(quote(chlorides<0.037))
+p1 <- quality_bar("Chlorides", fw, show_all_hist = draw_siluette)
+
+#filter ratio.sulfur.dioxide>0.2717
+filtered_wines_w<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = filtered_wines_w)
+fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717))
+p2 <- quality_bar("Sulf Ratio", fw, show_all_hist = draw_siluette)
+
+#filter density <0.9918 0.9916
+filtered_wines_w <-filter_data(quote(density<0.9918), data = filtered_wines_w)
+
+fw<-filter_data(quote(density<0.9918))
+
+p3 <- quality_bar("Density", fw, show_all_hist = draw_siluette)
+
+p4 <- quality_bar("Filtered", fw, show_all_hist = draw_siluette)
+
+
+grid.arrange(p0, p1, p2, p3, p4, ncol=2)
 ```
+
+
 
 ### Description Two
 
 
 ### Plot Three
 ```{r echo=FALSE, Plot_Three}
+  var1 <- filtered_wines_w$residual.sugar
+  var2 <- filtered_wines_w$total.sulfur.dioxide
 
+  p1 <- ggplot(aes(x = var1, y = var2),
+                    data= filtered_wines_w)
+  
+  p1 <- p1 + annotate("rect", xmin = 8, ymin = 105, xmax = 8.5, ymax = 120,
+                      fill = "red", alpha = 0.2)
+  
+  p1 <- p1 + annotate("rect", xmin = 3.35, ymin = 85, xmax = 3.75, ymax = 100,
+                      fill = "red", alpha = 0.2)
+  
+  p1 <- p1 + annotate("rect", xmin = 4.4, ymin = 130, xmax = 4.85, ymax = 147,
+                      fill = "red", alpha = 0.2)
+  
+  p1 <- p1 + geom_point(aes(color = rating, alpha = rating, size = alcohol,
+                              shape = cut(pH, breaks = 6)))+
+               xlab("residual.sugar")+
+               ylab("total.sulfur.dioxide")+
+               scale_alpha_manual(values = c(0.7,0.2,0.4,0.7))+
+               scale_size(range = c(1,6))+
+               labs(shape="pH (level)")
+                
+  
+  #calculate IQRs
+  iqr1 <- IQR(var1)
+  md1 <- median(var1)
+  r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
+
+  iqr2 <- IQR(var2)
+  md2 <- median(var2)
+  r2 <- c(md2- 2*iqr2, md2+ 2*iqr2)
+  
+  #strangely the plot for 
+  #p1<- p1+coord_cartesian(xlim = r1, ylim = r2)
+    
+  #is different from the plot
+  #p1<- p1+coord_cartesian(xlim = r1)
+  #p1<- p1+coord_cartesian(ylim = r2)
+  
+  p1 <- p1+coord_cartesian(xlim = c(3.0,9.0))
+
+  p1
+  
+#1] "alcohol"              "residual.sugar"       "total.sulfur.dioxide" "pH"                  
+# [5] "free.sulfur.dioxide"  "sulphates"            "volatile.acidity"     "ratio.sulfur.dioxide"
+# [9] "fixed.acidity"        "citric.acid"          "chlorides"            "density"
 ```
 
 ### Description Three

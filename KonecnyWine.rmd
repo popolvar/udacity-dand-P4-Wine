@@ -24,7 +24,7 @@ This data contains information about quality of (Vinho Verde) white wines from M
 
 The quality score is median value from an expert jury with at least three judges. It would be very interesting to have also the scores of individual judges, so I could see the variance in scores. Unfortunately only the aggregate value is provided.
 
-Quality takes a numerical value, but it is effectively an ordered factor (and is treated accordingly). According to [dataset description](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityInfo.txt) possible values for quality range from 0 (very bad) and 10 (very excellent). The [academic paper](https://www.researchgate.net/publication/222430341_Modeling_wine_preferences_by_data_mining_from_physicochemical_properties) referencing the dataset suggests that expert judged the wine on this numeric scale (as opposed to a qualitative scale later mapped to numbers). 
+Quality takes a numerical value, but it is effectively an ordered factor (and is treated accordingly). According to [dataset description](https://s3.amazonaws.com/udacity-hosted-downloads/ud651/wineQualityInfo.txt) possible values for quality range from 0 (very bad) and 10 (very excellent). The [academic paper](https://www.researchgate.net/publication/222430341_Modeling_wine_preferences_by_data_mining_from_physicochemical_properties) [1] referencing the dataset suggests that expert judged the wine on this numeric scale (as opposed to a qualitative scale later mapped to numbers). 
 
 # Univariate Plots Section
 
@@ -704,9 +704,9 @@ The negative correlation between alcohol and density is clearly the strongest on
 
 # Multivariate Plots Section
 
-I started with plotting the variable pairings identified in the previous section. I have removed the outliers (lying outside of the IQR) and scaled the axis to focus on the majority of data points. I have also customized the alpha value decreasing alpha for medium (forming the overwhelming majority) and increasing the alpha for bad and excellent wines (which are rare).
+I started with plotting the variable pairings identified in the previous section. I have removed the outliers (lying outside of the IQR) and scaled the axes to focus on the majority of data points. I have also customized the alpha value, decreasing alpha for medium (forming the overwhelming majority) and increasing the alpha for bad and excellent wines (which are rare).
 
-The plot confirms the trends I already know, e.i. high alcohol and low density wines tend to have higher quality. However bad quality wines are also scattered over the plot.  
+The plots confirm trends I already know: e.i. high alcohol and low density wines tend to have higher quality. However bad quality wines are scattered all over the plot.  
 
 ```{r echo=FALSE}
 plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE, remove_outliers = TRUE){
@@ -765,7 +765,7 @@ plot_bivar(wines_w$density, wines_w$chlorides)+
   coord_cartesian(xlim = c(0.988,1.001), ylim = c(0.01, 0.075))
 ```
 
-The plots are still very noisy and dominated by medium wines (green). Next I decided to focus only on filtered wines. I will repeat the same analysis as before. First I calculate Pearson's R between quality and other variables and quality, this time considering only the filtered wines.
+The plots are still very noisy and dominated by medium wines (green). Next I decided to focus only on filtered wines. I will repeat the same analysis as before. First I calculate Pearson's R between quality and other variables, this time considering only the filtered wines.
 
 ```{r echo=FALSE}
 cor_f <-cor(filtered_wines_w[13],filtered_wines_w[,c(2:12,15)])
@@ -780,9 +780,9 @@ The resulting list is very different from the one for all wines described previo
 rel_cor[order(abs(rel_cor), decreasing = TRUE)]
 ```
 
-There are very few similarities in the two lists. In both alcohol shows the strongest correlation with quality. For filtered wines the difference between alcohol and the second best variable (residual sugar) is very small.
+There are very few similarities in the two lists. In both alcohol shows the strongest correlation with quality. For filtered wines the difference between alcohol and the second best variable (residual sugar) is very small, in contrast to the other list.
 
-Accidentally both list have three entries with correlation above 0.2 in (absolute terms). But for filtered wines the correlation drops much quicker. I start with the top three variables for filtered wines (alcohol, residual.sugar, total.sulfur.dioxide) against each other.
+Accidentally both list have three entries with correlation above 0.2 (in absolute terms). But for filtered wines the correlation drops much quicker. I start with the top three variables for filtered wines (alcohol, residual.sugar, total.sulfur.dioxide) against each other.
 
 ```{r echo=FALSE}
 
@@ -800,7 +800,7 @@ plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$total.sulfur.dioxide,
 
 The plot of residual.sugar against total.sulfur.dioxide reveals an area dominated by good and excellent wines (where residual sugar is between 3 and 9). Next I will zoom into this section of the plot. I will also visualize two additional variables through size and shape.
 
-In plot below size corresponds to alcohol and shape to pH. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines. On the contrary, I have established that medium and excellent wines can be very similar  (plotted against a red background).
+In plot below size corresponds to alcohol and shape to pH. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines. On the contrary, I have established that medium and excellent wines can be very similar  (examples plotted against a red background).
 
 ```{r echo=FALSE}
   var1 <- filtered_wines_w$residual.sugar
@@ -857,11 +857,11 @@ looking at your feature(s) of interest?
 
 Once again I have mostly confirmed trends from my previous investigation.
 
-It was very interesting to see how the importance of features has changed when considering only the filtered wines. In hindsight, it was to be expected. When I removed many wines based on a particular feature, one could expect that this feature will become less important. 
+It was very interesting to see how the importance of features has changed, when I have considered only the filtered wines. In hindsight, it was to be expected. When I removed many wines based on a particular variable, one could expect that this variable will become less important in the remaining wines.
 
-Yet I found the extent of this surprising. Density and chlorides are the features least correlate with quality in the filtered dataset. Prior to fitlering, they were the most correlated features only (after alcohol). 
+Yet I found the extent of this surprising. Density and chlorides are the features least correlate with quality in the filtered dataset. Prior to filtering, they were the most correlated features (after alcohol).
 
-The plot below nicelly shows the difference between the two data sets. The plot for all wines shows a linear tendency, while the plot for filtetered wines is more scattered.
+The plot below nicely shows the difference between the two data sets. The plot for all wines shows a linear tendency, while the plot for filtered wines is more scattered.
 
 ```{r echo=FALSE}
 p0 <- plot_bivar(wines_w$alcohol, wines_w$density, show_leg = FALSE)
@@ -878,18 +878,26 @@ grid.arrange(p0, p1, ncol=1, top = "Strongest correlations")
 ```
 
 
-It is remarkable how strongly alcohol correlates with quality. I would be curious to know whether this is because of poor quality wines have little alcohol. Or becuase the high alcohol content numbs the finer distinctions beween wines.
+It is remarkable how strongly alcohol correlates with quality. I would be curious to know whether this is because of poor quality wines have little alcohol. Or because the high alcohol content numbs the finer distinctions between the wines.
 
 ### Were there any interesting or surprising interactions between features?
 
-I was curious whether I can find a reliable way to tell apart medium, good and excellent wines. This is not the case. It was really interesting to see how very similar are two wines which significantly differ in quality.
+I was curious whether I can find simple criterion to reliably tell apart medium, good and excellent wines. I couldn't fine one. It was really interesting to see how very similar are two wines which significantly differ in quality.
+
+The author of [1] have applied a number of machine learning techniques and came to a similar conclusion:
+
+*In general, the white [wine] data results are better: 60.3/63.3% for classes 6 and 4, 67.8/72.6% for grades 7 and 5, and a surprising 85.5% for the class 8 (the exception are the 3 and 9 extremes with 0%, not shown in the table).*
+
+Note that grade 6 wines represent 44.88% of distribution and are detected  in 60.3% of cases. Grade 5 wines represent 29.75% and are detected in 72.6%. Grade 7 wines represent 17.97% and are detected in 67.8%.
+
+In summary for 92.6% wines the detection accuracy is just above 2/3. This suggests that reliably separating wines by quality is not easy.
 
 ### OPTIONAL: Did you create any models with your dataset? Discuss the \
 strengths and limitations of your model.
 
-I choose to create no models. The main reason is that quality (the target variable) is ultimately a factor variable, albeit expressed on a numeric scale. Ultimately it is a subjective judgement of three juror on a limited scale. 
+I choose to create no models. The main reason is that quality (the target variable) is ultimately a factor variable, albeit expressed on a numeric scale. Ultimately it is a subjective judgement of three juror on a limited scale.
 
-Base on my investigation I am sceptical about finding an objective and universal  relationship between the measured variables and assigned quality. 
+Base on my investigation I am sceptical about finding an objective and universal relationship between the measured variables and assigned quality. The findings reported in [1] reinforce my scepticism.
 
 ------
 
@@ -1025,3 +1033,7 @@ future work that could be done with the dataset.
 
 > **Tip**: Don't forget to remove this, and the other **Tip** sections before
 saving your final work and knitting the final report!
+
+# References
+
+[1] P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553. ISSN: 0167-9236.

@@ -564,7 +564,7 @@ I also introduced an auxiliary variable filtering to draw before/after boxplots.
 
 # Bivariate Plots Section
 
-I have plotted the various variables (e.g. sulphates) against quality in scatterplots. To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for boxplot). I also plotted the some statistical summaries among the datapoints: median (red dot) and 1st and 3 quantile (blue dots). The datapoints were coloured according to their rating.
+I have plotted the various variables (e.g. sulphates) against quality in scatterplots. To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for boxplot). I also plotted the some statistical summaries among the datapoints: mean (red dot) and 1st , 2nd (median) 3rd quantile (yellow, orange and brown dot). The datapoints were coloured according to their rating.
 
 In general scatterplots revealed more structure but mostly confirmed observations from boxplots. Take for example sulpahtes.
 
@@ -582,14 +582,24 @@ plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25, show_leg = FAL
   p1 <- ggplot(aes(x = quality, y = var1, color = rating),
                     data= data1)+
                geom_point(alpha = alpha1, position = position_jitter(h=0))+
-               stat_summary(fun.y=median, colour="red", geom="point", size=2)+
+               stat_summary(fun.y=mean, color = "red", geom="point", size = 2,
+                            aes(fill = "mean"))+
+               stat_summary(fun.y=median, color="orange", geom="point", size=2,
+                            aes(fill = "2Q"))+
                stat_summary(fun.y=qwrap, fun.args = list(c(0.25)),
-                            colour="blue", geom="point", size=2)+
+                            color="yellow", geom="point", size=2,
+                            aes(fill = "1Q"))+
                stat_summary(fun.y=qwrap, fun.args = list(c(0.75)),
-                            colour="blue", geom="point", size=2)+
+                            color="brown",geom="point", size=2,
+                            aes(fill = "3Q"))+
+               scale_fill_manual("statistics", values = rep(1,4),
+                  guide=guide_legend(override.aes = list(colour = c("yellow", "orange",
+                                                                  "brown", "red"))))+
+
                coord_cartesian(ylim = r1)+
                #only use the part after $ for label name
                ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
+
   
   #remove legend
   if(!show_leg){
@@ -645,8 +655,8 @@ There is one more interesting case volatile acidity. In hindsight the trend was 
 
 Anyhow adding filtering by volatile acidity would not improving filtering. Actually it would make things much worse. Removing wines through filtering is very delicate trial and error procedure. One has to be carefull not to remove too many wines.
 
-```{r}
-p1 <- plot_vs_quality(wines_w$volatile.acidity)
+```{r, echo=FALSE}
+p1 <- plot_vs_quality(wines_w$volatile.acidity, show_leg = T)
 p1 <- p1 + geom_hline(yintercept = 0.26, color = "blue", linetype="dotted")
 p1
 ```
@@ -912,53 +922,95 @@ units), and good aesthetic choices (e.g. color, transparency). After each plot,
 make sure you justify why you chose each plot by describing what it shows.
 
 ### Plot One
+
 ```{r echo=FALSE, Plot_One}
 p1 <- plot_vs_quality(wines_w$chlorides)
 p1 <- p1 + geom_hline(yintercept = 0.037, color = "blue", linetype="dotted")
 
+
 p2 <- plot_vs_quality(wines_w$ratio.sulfur.dioxide)
 p2 <- p2 + geom_hline(yintercept = 0.2717, color = "blue", linetype="dotted")
+p2 <- p2 + guides(color = FALSE)
 
 p3 <- plot_vs_quality(wines_w$density)
 p3 <- p3 + geom_hline(yintercept = 0.9918, color = "blue", linetype="dotted")
 
 p4 <- plot_vs_quality(wines_w$alcohol)
 p4 <- p4 + geom_hline(yintercept = 11.0, color = "blue", linetype="dotted")
+p4 <- p4 + guides(fill = FALSE)
+
+g <- ggplotGrob(p2+theme(legend.position="right"))$grobs
+l1 <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
 
 
-grid.arrange(p1, p2, p3, p4, ncol=2)
+g <- ggplotGrob(p4+theme(legend.position="right"))$grobs
+l2 <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+
+
+grid.arrange(arrangeGrob(p1,p2, l1, p3, p4, l2,
+    ncol=3,widths=c(3/7,3/7,1/7)), top = "Scatter Plots by Quality")
 ```
 
 ### Description One
 
+I have plotted the various variables (e.g. sulphates) against quality in scatterplots. To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for boxplot). I also plotted the some statistical summaries among the datapoints: mean (red dot) and 1st, 2nd (median) 3rd quantile (orange dots). The datapoints were coloured according to their rating.
 
 ### Plot Two
+
+```{r echo=FALSE}
+#Draw a histogram of quality color coded by rating
+#show_leg tells whether legend should be shown (for matrix of plots)
+#show_all_hist shows dashed histogram of the original dataset (used in conjunction with filtered datasets)
+
+quality_bar_log<-function(title, data1 = wines_w, show_leg = FALSE, show_all_hist = FALSE){
+  p1<-ggplot(aes(x = quality, fill = rating), data = data1) +
+  geom_bar() +
+  xlab('Quality') +
+  ylab('log(Count)')+
+  scale_y_log10()+
+  ggtitle(title)
+  
+  #remove legend,
+  if(!show_leg){
+    p1<-p1+theme(legend.position="none")
+  }
+  
+  if(show_all_hist){
+    p1<-p1+geom_bar(color = 'red', fill = NA, linetype="dashed", data = wines_w)+
+      scale_y_log10()
+  }
+
+  return(p1)
+}
+
+```
+
 ```{r echo=FALSE, Plot_Two}
 #filter_data(quote(wines_w$chlorides<0.037),verbose = TRUE)
 
 #before filtering
-p0 <-quality_bar("All")
+p0 <-quality_bar_log("All")
 
 draw_siluette = TRUE
 
 #filter chlorides <0.037 <0.0355
 filtered_wines_w<-filter_data(quote(chlorides<0.037))
 fw<-filter_data(quote(chlorides<0.037))
-p1 <- quality_bar("Chlorides", fw, show_all_hist = draw_siluette)
+p1 <- quality_bar_log("Chlorides", fw, show_all_hist = draw_siluette)
 
 #filter ratio.sulfur.dioxide>0.2717
 filtered_wines_w<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = filtered_wines_w)
 fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717))
-p2 <- quality_bar("Sulf Ratio", fw, show_all_hist = draw_siluette)
+p2 <- quality_bar_log("Sulf Ratio", fw, show_all_hist = draw_siluette)
 
 #filter density <0.9918 0.9916
 filtered_wines_w <-filter_data(quote(density<0.9918), data = filtered_wines_w)
 
 fw<-filter_data(quote(density<0.9918))
 
-p3 <- quality_bar("Density", fw, show_all_hist = draw_siluette)
+p3 <- quality_bar_log("Density", fw, show_all_hist = draw_siluette)
 
-p4 <- quality_bar("Filtered", fw, show_all_hist = draw_siluette)
+p4 <- quality_bar_log("Filtered", fw, show_all_hist = draw_siluette)
 
 
 grid.arrange(p0, p1, p2, p3, p4, ncol=2)
@@ -1013,7 +1065,7 @@ grid.arrange(p0, p1, p2, p3, p4, ncol=2)
   
   p1 <- p1+coord_cartesian(xlim = c(3.0,9.0))
 
-  p1
+  p1 + ggtitle("Focus")
   
 #1] "alcohol"              "residual.sugar"       "total.sulfur.dioxide" "pH"                  
 # [5] "free.sulfur.dioxide"  "sulphates"            "volatile.acidity"     "ratio.sulfur.dioxide"
@@ -1021,6 +1073,10 @@ grid.arrange(p0, p1, p2, p3, p4, ncol=2)
 ```
 
 ### Description Three
+
+The plot of residual.sugar against total.sulfur.dioxide reveals an area dominated by good and excellent wines (where residual sugar is between 3 and 9). Next I will zoom into this section of the plot. I will also visualize two additional variables through size and shape.
+
+In plot below size corresponds to alcohol and shape to pH. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines. On the contrary, I have established that medium and excellent wines can be very similar  (examples plotted against a red background). / residual sugar > total sulfur dioxide
 
 ------
 

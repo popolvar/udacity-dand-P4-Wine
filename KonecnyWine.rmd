@@ -925,19 +925,22 @@ make sure you justify why you chose each plot by describing what it shows.
 
 ```{r echo=FALSE, Plot_One}
 p1 <- plot_vs_quality(wines_w$chlorides)
-p1 <- p1 + geom_hline(yintercept = 0.037, color = "blue", linetype="dotted")
-
+p1 <- p1 + geom_hline(yintercept = 0.037, linetype="dotted", color = "blue")
 
 p2 <- plot_vs_quality(wines_w$ratio.sulfur.dioxide)
-p2 <- p2 + geom_hline(yintercept = 0.2717, color = "blue", linetype="dotted")
+p2 <- p2 + geom_hline(aes(yintercept = 0.2717, linetype="cut off"), color = "blue")
+p2 <- p2 + scale_linetype_manual("cut off        ",values=c("dotted"),
+                        guide=guide_legend(override.aes = list(colour = c("blue"))))
 p2 <- p2 + guides(color = FALSE)
 
 p3 <- plot_vs_quality(wines_w$density)
 p3 <- p3 + geom_hline(yintercept = 0.9918, color = "blue", linetype="dotted")
 
 p4 <- plot_vs_quality(wines_w$alcohol)
-p4 <- p4 + geom_hline(yintercept = 11.0, color = "blue", linetype="dotted")
-p4 <- p4 + guides(fill = FALSE)
+p4 <- p4 + geom_hline(aes(yintercept = 11.0, linetype=" "), color = "blue")
+p4 <- p4 + scale_linetype_manual("cut off",values=c("dotted"),
+                        guide=guide_legend(override.aes = list(colour = c("blue"))))
+p4 <- p4 + guides(fill = FALSE, linetype = FALSE )
 
 g <- ggplotGrob(p2+theme(legend.position="right"))$grobs
 l1 <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
@@ -957,65 +960,34 @@ I have plotted the various variables (e.g. sulphates) against quality in scatter
 
 ### Plot Two
 
+
 ```{r echo=FALSE}
-#Draw a histogram of quality color coded by rating
-#show_leg tells whether legend should be shown (for matrix of plots)
-#show_all_hist shows dashed histogram of the original dataset (used in conjunction with filtered datasets)
-
-quality_bar_log<-function(title, data1 = wines_w, show_leg = FALSE, show_all_hist = FALSE){
-  p1<-ggplot(aes(x = quality, fill = rating), data = data1) +
-  geom_bar() +
-  xlab('Quality') +
-  ylab('log(Count)')+
-  scale_y_log10()+
-  ggtitle(title)
-  
-  #remove legend,
-  if(!show_leg){
-    p1<-p1+theme(legend.position="none")
-  }
-  
-  if(show_all_hist){
-    p1<-p1+geom_bar(color = 'red', fill = NA, linetype="dashed", data = wines_w)+
-      scale_y_log10()
-  }
-
-  return(p1)
-}
+ggplot(aes(y = baf_wines_w$residual.sugar, x= rating, color = rating), data = baf_wines_w)+
+  geom_boxplot()+
+  ylab("residual.sugar")+
+  stat_summary(fun.y=mean, color = "red", geom="point", size = 2,
+               aes(fill = "mean"))+
+  stat_summary(fun.y=median, color="orange", geom="point", size=2,
+               aes(fill = "2Q"))+
+  stat_summary(fun.y=qwrap, fun.args = list(c(0.25)),
+               color="yellow", geom="point", size=2,
+               aes(fill = "1Q"))+
+  stat_summary(fun.y=qwrap, fun.args = list(c(0.75)),
+               color="brown",geom="point", size=2,
+               aes(fill = "3Q"))+
+  scale_fill_manual("statistics", values = rep(1,4),
+               guide=guide_legend(override.aes = list(colour = c("yellow", "orange",
+                                                                  "brown", "red"))))+
+  coord_cartesian(ylim=c(0,7.5))+
+  facet_wrap(~filtering)+
+  geom_hline(aes(linetype="> medium", yintercept = 2.6), color ="green")+
+  geom_hline(aes(linetype="> good", yintercept = 4.212), color ="blue")+
+  scale_linetype_manual("keep wines",values=c("dotted", "dashed"),
+                        guide=guide_legend(override.aes = list(colour = c("blue", "green"))))+
+  ggtitle("Impact of Filtering")+
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
-
-```{r echo=FALSE, Plot_Two}
-#filter_data(quote(wines_w$chlorides<0.037),verbose = TRUE)
-
-#before filtering
-p0 <-quality_bar_log("All")
-
-draw_siluette = TRUE
-
-#filter chlorides <0.037 <0.0355
-filtered_wines_w<-filter_data(quote(chlorides<0.037))
-fw<-filter_data(quote(chlorides<0.037))
-p1 <- quality_bar_log("Chlorides", fw, show_all_hist = draw_siluette)
-
-#filter ratio.sulfur.dioxide>0.2717
-filtered_wines_w<-filter_data(quote(ratio.sulfur.dioxide>0.2717), data = filtered_wines_w)
-fw<-filter_data(quote(ratio.sulfur.dioxide>0.2717))
-p2 <- quality_bar_log("Sulf Ratio", fw, show_all_hist = draw_siluette)
-
-#filter density <0.9918 0.9916
-filtered_wines_w <-filter_data(quote(density<0.9918), data = filtered_wines_w)
-
-fw<-filter_data(quote(density<0.9918))
-
-p3 <- quality_bar_log("Density", fw, show_all_hist = draw_siluette)
-
-p4 <- quality_bar_log("Filtered", fw, show_all_hist = draw_siluette)
-
-
-grid.arrange(p0, p1, p2, p3, p4, ncol=2)
-```
-
 
 
 ### Description Two
@@ -1065,7 +1037,8 @@ grid.arrange(p0, p1, p2, p3, p4, ncol=2)
   
   p1 <- p1+coord_cartesian(xlim = c(3.0,9.0))
 
-  p1 + ggtitle("Focus")
+  p1 + ggtitle("Focus on Excellence")+
+    theme(plot.title = element_text(hjust = 0.5))
   
 #1] "alcohol"              "residual.sugar"       "total.sulfur.dioxide" "pH"                  
 # [5] "free.sulfur.dioxide"  "sulphates"            "volatile.acidity"     "ratio.sulfur.dioxide"
@@ -1076,7 +1049,7 @@ grid.arrange(p0, p1, p2, p3, p4, ncol=2)
 
 The plot of residual.sugar against total.sulfur.dioxide reveals an area dominated by good and excellent wines (where residual sugar is between 3 and 9). Next I will zoom into this section of the plot. I will also visualize two additional variables through size and shape.
 
-In plot below size corresponds to alcohol and shape to pH. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines. On the contrary, I have established that medium and excellent wines can be very similar  (examples plotted against a red background). / residual sugar > total sulfur dioxide
+In plot below size corresponds to alcohol and shape to pH. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines. On the contrary, I have established that medium and excellent wines can be very similar  (examples plotted against a red background). / residual sugar > total sulfur dioxide1
 
 ------
 

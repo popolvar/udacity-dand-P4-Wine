@@ -1070,13 +1070,15 @@ Despite of removing the vast majority wines, the highlighted wines show a good v
 
 # Reflection
 
-> **Tip**: Here's the final step! Reflect on the exploration you performed and
-the insights you found. What were some of the struggles that you went through?
-What went well? What was surprising? Make sure you include an insight into
-future work that could be done with the dataset.
+I have liked this project so much! I have not followed the stream of conscience/plots strictly. I did so many plots that it would be boring to keep them all in. I have just described which plots have I done and kept those which have shown something interesting.
 
-> **Tip**: Don't forget to remove this, and the other **Tip** sections before
-saving your final work and knitting the final report!
+I thing I have overdone this project, by going much deeper then quick exploration. But I was curious how far You can go using purely visualization. Relying purely on machine  learning (as described in [1]) would be a sensible option. But then I wouldn't inspect the structure of the data so closely.
+
+Because of the structure of the project I have first tried to get the best out of univariate plots before moving on. Perhaps I spend to much time on box plots and filtering because of this. Now I would move more freely between different visualizations as need arrives.
+
+On the other hand it was nice that I have rediscovered the same trends through multi variate analysis using Pearson's R. Pearson's R was a real delight. In this particular case it has proven a very useful heuristics to identify promising variables. It also allowed me to compare their relative promise.
+
+Of course one has to be careful and always check and verify. Pearson's R is not guaranteed giving useful meaningful insights, but then neither are most other statistical methods (except the rare cases when it can be shown that their formal requirements hold). But with messy real world data, Pearson's R has proven to be a surprisingly useful rule of thumb for identifying promising  variables for trial and error.
 
 # References
 

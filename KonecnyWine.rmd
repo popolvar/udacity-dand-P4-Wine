@@ -122,7 +122,7 @@ ggplot(aes(x = pH, fill = rating), data = wines_w) +
 
 I investigated all the variables with the function bellow. In general histograms showed a similar trends and (seemingly) normal distribution. On the other hand Boxplots and Summaries of some variables revealed some interesting trends.
 
-Boxplot and Summaries show tha medium (rating) wines typically exhibit the most variance (and most outliers). Since medium is the most frequent category, it is not surprising. Conversely excelent wines are rare and generally have the lowest variance.
+Boxplot and Summaries show tha medium (rating) wines typically exhibit the most variety of values (and most outliers). Since medium is the most frequent category, it is not surprising. Conversely excelent wines are rare and generally have the lowest variety.
 
 ```{r echo=FALSE, Univariate_Plots_Variable_facet_Rating}
 
@@ -564,7 +564,7 @@ I also introduced an auxiliary variable filtering to draw before/after boxplots.
 
 # Bivariate Plots Section
 
-I have plotted the various variables (e.g. sulphates) against quality in scatterplots. To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for boxplot). I also plotted the some statistical summaries among the datapoints: mean (red dot) and 1st , 2nd (median) 3rd quantile (yellow, orange and brown dot). The datapoints were coloured according to their rating.
+I have plotted the various variables (e.g. sulphates) against quality in scatterplots. To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for a box plot). I also plotted the some statistical summaries among the data points: mean (red dot) and 1st (yellow), 2nd / median (orange) and 3rd quantile (brown). The datapoints were coloured according to their rating.
 
 In general scatterplots revealed more structure but mostly confirmed observations from boxplots. Take for example sulpahtes.
 
@@ -853,7 +853,7 @@ In plot below size corresponds to alcohol and shape to pH. I have tried differen
   #p1<- p1+coord_cartesian(xlim = r1)
   #p1<- p1+coord_cartesian(ylim = r2)
   
-  p_final <- p1+coord_cartesian(xlim = c(3.0,9.0))
+  p_final <- p1 +coord_cartesian(xlim = c(3.0,9.0))
 
   p_final
 ```
@@ -913,14 +913,6 @@ Base on my investigation I am sceptical about finding an objective and universal
 
 # Final Plots and Summary
 
-> **Tip**: You've done a lot of exploration and have built up an understanding
-of the structure of and relationships between the variables in your dataset.
-Here, you will select three plots from all of your previous exploration to
-present here as a summary of some of your most interesting findings. Make sure
-that you have refined your selected plots for good titling, axis labels (with
-units), and good aesthetic choices (e.g. color, transparency). After each plot,
-make sure you justify why you chose each plot by describing what it shows.
-
 ### Plot One
 
 ```{r echo=FALSE, Plot_One}
@@ -956,7 +948,15 @@ grid.arrange(arrangeGrob(p1,p2, l1, p3, p4, l2,
 
 ### Description One
 
-I have plotted the various variables (e.g. sulphates) against quality in scatterplots. To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for boxplot). I also plotted the some statistical summaries among the datapoints: mean (red dot) and 1st, 2nd (median) 3rd quantile (orange dots). The datapoints were coloured according to their rating.
+I have drawn scatter plot of various variables (e.g. sulphates) against quality to visualize how distribution of variable varies for quality. The dots are coloured according to the rating of wines, which is variable derived from quality I use through this analysis.
+
+To remove outliers I have plotted only values which fell into the interval [median - 2\*IQR, median + 2\*IQR] (within the whiskers for a box plot). I also plotted the some statistical summaries among the data points: mean (red dot) and 1st (yellow), 2nd / median (orange) and 3rd quantile (brown).
+
+Both the scatter plots and the statistical summaries suggest that I can draw a line separating the vast majority of bad and medium wines from the rest. The dotted blue cut off line represent this decision boundary. Conversely the wines on the other side of the line are much more likely to be good or excellent.
+
+I use such cut off values for chlorides and density (below the line) and ratio.sulfur.dioxide (above the line) to filter out wines which are bad and medium (and not good or excellent). This way I get a filtered wines dataset. I should also mentioned that I have crated ratio.sulfur.dioxide during the analysis (I divided free.sulfur.dioxide by total.sulfur.dioxide)
+
+I do not consider alcohol content for filtering. People can consciously choose wines by alcohol content, which is unlikely for many other chemical properties measured and discussed here (e.g. chlorides).
 
 ### Plot Two
 
@@ -980,10 +980,10 @@ ggplot(aes(y = baf_wines_w$residual.sugar, x= rating, color = rating), data = ba
                                                                   "brown", "red"))))+
   coord_cartesian(ylim=c(0,7.5))+
   facet_wrap(~filtering)+
-  geom_hline(aes(linetype="> medium", yintercept = 2.6), color ="green")+
-  geom_hline(aes(linetype="> good", yintercept = 4.212), color ="blue")+
-  scale_linetype_manual("keep wines",values=c("dotted", "dashed"),
-                        guide=guide_legend(override.aes = list(colour = c("blue", "green"))))+
+  geom_hline(aes(linetype="> medium", yintercept = 2.6), color ="blue")+
+  geom_hline(aes(linetype="> good", yintercept = 4.212), color ="green")+
+  scale_linetype_manual("keep wines",values=c("dashed", "dotted"),
+                        guide=guide_legend(override.aes = list(colour = c("green", "blue"))))+
   ggtitle("Impact of Filtering")+
   theme(plot.title = element_text(hjust = 0.5))
 
@@ -992,6 +992,11 @@ ggplot(aes(y = baf_wines_w$residual.sugar, x= rating, color = rating), data = ba
 
 ### Description Two
 
+I chose the plot above to highlight the difference between the original and filtered dataset (described above). I focused on the residual.sugar variable. For the filtered dataset, residual.sugar has the second strongest correlation with wine quality by Pearson's R (just below alcohol and the difference between them is very small).
+
+The plot shows that filtering has greatly decreased the range of possible values. For residual.sugar in particular, I could easily reiterate the filtering by removing the vast majority of bad and medium wines (below blue dotted line) or focus only on keeping the excellent wines (above the green dashed line).
+
+Apart from removing subpar wines (bellow good), filtering can also accentuate the differences between the ratings. 
 
 ### Plot Three
 ```{r echo=FALSE, Plot_Three}
@@ -1000,7 +1005,13 @@ ggplot(aes(y = baf_wines_w$residual.sugar, x= rating, color = rating), data = ba
 
   p1 <- ggplot(aes(x = var1, y = var2),
                     data= filtered_wines_w)
-  
+
+  p1 <- p1 + annotate("rect", xmin = 4, ymin = 70, xmax = 6, ymax = 150,
+                      fill = "yellow", alpha = 0.2)
+
+  p1 <- p1 + annotate("rect", xmin = 7, ymin = 75, xmax = 9, ymax = 130,
+                      fill = "yellow", alpha = 0.2)
+    
   p1 <- p1 + annotate("rect", xmin = 8, ymin = 105, xmax = 8.5, ymax = 120,
                       fill = "red", alpha = 0.2)
   
@@ -1047,9 +1058,13 @@ ggplot(aes(y = baf_wines_w$residual.sugar, x= rating, color = rating), data = ba
 
 ### Description Three
 
-The plot of residual.sugar against total.sulfur.dioxide reveals an area dominated by good and excellent wines (where residual sugar is between 3 and 9). Next I will zoom into this section of the plot. I will also visualize two additional variables through size and shape.
+This plot shows two areas dominated by good and excellent wines (highlighted by the yellow background). I have only plotted wines from the filtered dataset which contains a larger proportion of good and excellent (above 53% comparing with bellow 22% for all wines). The filtered dataset is also much smaller and contains only 374 wines (7.63% of total). Thus considering only filtered wines increases greatly the readability of the plot.
 
-In plot below size corresponds to alcohol and shape to pH. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines. On the contrary, I have established that medium and excellent wines can be very similar  (examples plotted against a red background). / residual sugar > total sulfur dioxide1
+I have plotted total.sulfur dioxide against residual sugar. These two variables show the highest correlation (by Pearson's R) with quality for filtered wines, with exception of alcohol. Alcohol itself is represented by size of dots. Shape represents a level of pH.
+
+This plot shows that it is hard to reliably discriminate even between medium and excellent wines. Cases of very similar wines with very different ratings are highlighted by red backgrounds. I have tried different combinations of variables, but I couldn't find a combination which reliably discriminates between good, medium and excellent wines.
+
+Despite of removing the vast majority wines, the highlighted wines show a good variety in alcohol, pH and residual.sugar.
 
 ------
 

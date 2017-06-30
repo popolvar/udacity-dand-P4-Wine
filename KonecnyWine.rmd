@@ -66,7 +66,9 @@ quality_bar<-function(title, data1 = wines_w, show_leg = FALSE,
   geom_bar() +
   xlab('Quality') +
   ylab('Count')+
-  ggtitle(title)
+  ggtitle(title)+
+  scale_fill_brewer(palette = "Blues")+
+  theme_dark()
   
   #remove legend,
   if(!show_leg){
@@ -105,16 +107,23 @@ Let me start with factoring alcohol and pH through rating. Will set the scale to
 ```{r echo=FALSE, message = FALSE, Univariate_Plots_Alcohol_facet_Rating}
 
 ggplot(aes(x = alcohol), data = wines_w) +
-  geom_histogram(color = 'gray', fill = 'orange', bins = 60)
+  geom_histogram(color = 'gray', fill = 'orange', bins = 60)+
+  theme_dark()
+
+summary(wines_w$alcohol)
 
 ggplot(aes(x = alcohol, fill = rating), data = wines_w) +
   geom_histogram(color = 'gray') +
-  facet_wrap(~rating) 
+  facet_wrap(~rating)+
+  scale_fill_brewer(palette = "Blues")+
+  theme_dark()
 
 
 ggplot(aes(x = alcohol, fill = rating), data = wines_w) +
   geom_histogram(color = 'gray') +
-  facet_wrap(~rating, scale = 'free_y') 
+  facet_wrap(~rating, scale = 'free_y')+
+  scale_fill_brewer(palette = "Blues")+
+  theme_dark()
 ```
 
 The shape of the alcohol histogram is very interesting. It doesn't look much like normal distribution. It has multiple peaks.
@@ -123,12 +132,56 @@ Interestingly when I factored the histograms by rating, one can notice strongly 
 
 ```{r echo=FALSE,  message = FALSE, Univariate_Plots_pH_facet_Rating}
 ggplot(aes(x = pH), data = wines_w) +
-  geom_histogram(color = 'gray', fill = 'orange')
+  geom_histogram(color = 'gray', fill = 'orange')+
+  theme_dark()
+
+summary(wines_w$pH)
 
 ggplot(aes(x = pH, fill = rating), data = wines_w) +
   geom_histogram(color = 'gray') +
-  facet_wrap(~rating, scale = 'free_y') 
+  facet_wrap(~rating, scale = 'free_y')+
+  scale_fill_brewer(palette = "Blues")+
+  theme_dark()
 
+```
+
+```{r echo=FALSE, Univariate_Plots_Variable_facet_Rating}
+
+explore_var <- function(var1, data1 = wines_w){
+  #only use the part after $
+  var_name <-strsplit(deparse(substitute(var1)),"\\$")[[1]][2]
+
+  
+  #histograms 
+  h1<-ggplot(aes(x = var1, fill = rating), data = data1 )+
+  geom_histogram(color = 'gray') +
+  facet_wrap(~rating, scales = "free_y")+
+  xlab(var_name)+
+  scale_fill_brewer(palette = "Blues")+
+  theme_dark()
+  
+  # boxplot
+  b1<-ggplot(aes(y = var1, x= rating, color = rating), data = data1)+
+  geom_boxplot(alpha = 0.5)+
+  ylab(var_name)+
+  stat_summary(fun.y=mean, colour="red", geom="point", size=2)+
+  scale_color_brewer(palette = "Blues")+
+  theme_dark()
+  
+  #summary
+  s1<-by(var1,wines_w$rating, summary)
+  
+  #for all variables
+  h0<-ggplot(aes(x = var1), data = wines_w)+
+  geom_histogram(color = 'gray', fill = 'orange', bins = 60)+
+  xlab(var_name)+
+  scale_fill_brewer(palette = "Blues")+
+  theme_dark()
+  
+  s0<-summary(var1)
+
+  return(list(h1,b1,s1,h0,s0))
+}
 ```
 
 The histogram of total distribution of pH resembles a bell curve very closely. It is left skewed and has a bit of a long tail to the right. 
@@ -136,23 +189,67 @@ The histogram of total distribution of pH resembles a bell curve very closely. I
 Such trends are even more pronunced in most of the other variables. Chlorides are good example.
 
 ```{r, echo=FALSE}
+res_var <-explore_var(wines_w$chlorides)
+res_var[[4]]
+res_var[[5]]
+```
 
-ggplot(aes(x = chlorides), data = wines_w) +
-  geom_histogram(color = 'gray', fill = 'orange', bins = 60)
+Most variables follow a similar trend.
+
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$citric.acid)
+res_var[[4]]
+res_var[[5]]
+```
+
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$volatile.acidity)
+res_var[[4]]
+res_var[[5]]
+```
+
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$density)
+res_var[[4]]
+res_var[[5]]
+```
+
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$free.sulfur.dioxide)
+res_var[[4]]
+res_var[[5]]
+```
+
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$total.sulfur.dioxide)
+res_var[[4]]
+res_var[[5]]
+```
+
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$ratio.sulfur.dioxide)
+res_var[[4]]
+res_var[[5]]
 ```
 
 There are also couple of exceptions to these general trends. These are the already discussed alcohol, residual.sugar and sulphates.
 
 ```{r, echo=FALSE}
-ggplot(aes(x = alcohol), data = wines_w) +
-  geom_histogram(color = 'gray', fill = 'orange', bins = 60)
+res_var <-explore_var(wines_w$alcohol)
+res_var[[4]]
+res_var[[5]]
+```
 
-ggplot(aes(x = residual.sugar), data = wines_w) +
-  geom_histogram(color = 'gray', fill = 'orange', bins = 60)
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$residual.sugar)
+res_var[[4]]
+res_var[[5]]
+```
 
-ggplot(aes(x = sulphates), data = wines_w) +
-  geom_histogram(color = 'gray', fill = 'orange', bins = 60)
-
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$sulphates)
+res_var[[4]]
+res_var[[5]]
 ```
 
 ## Investigating individual variables
@@ -170,35 +267,9 @@ Boxplot and Summaries show tha medium (rating) wines typically exhibit the most 
 
 In this analysis I am interested mostly in the general trends for the particular ratings. I am not interested in the outlier of variables. This analysis focus on comparing characteristics of the wines grouped by their ratings.
 
-```{r echo=FALSE, Univariate_Plots_Variable_facet_Rating}
-
-explore_var <- function(var1, data1 = wines_w){
-  #histograms 
-  h1<-ggplot(aes(x = var1, fill = rating), data = data1 )+
-  geom_histogram(color = 'gray') +
-  facet_wrap(~rating, scales = "free_y")+
-  #only use the part after $
-  ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
-
-  
-  # boxplot
-  b1<-ggplot(aes(y = var1, x= rating), data = data1)+
-  geom_boxplot()+
-  
-  #only use the part after $ for label name
-  ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
-  stat_summary(fun.y=mean, colour="red", geom="point", size=2)
-  
-  #summary
-  s1<-by(var1,wines_w$rating, summary)
-
-  return(list(h1,b1,s1))
-}
-```
-
-
 ```{r echo=FALSE}
 res_var <-explore_var(wines_w$chlorides)
+res_var[[2]]
 ```
 
 
@@ -420,31 +491,43 @@ explore_filtering <- function(var1, data1 = baf_wines_w, f1 = 'filtered'){
   iqr1 <- IQR(dataf1)
   r2 <- c(median(dataf1)- 2*iqr1, median(dataf1)+ 2*iqr1)
 
-  p1<-ggplot(aes(y = var1, x= filtering), data = data1)+
-    geom_boxplot()+
+  #only use the part after $
+  var_name<-strsplit(deparse(substitute(var1)),"\\$")[[1]][2]
+
+  p1<-ggplot(aes(y = var1, x= filtering, color= rating),
+             data = data1)+
+    geom_boxplot(alpha=0.5)+
     #only use the part after $
-    ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+    ylab(var_name)+
     stat_summary(fun.y=mean, colour="red", geom="point",
                  size=2)+
     coord_cartesian(ylim=r2)+
-    facet_wrap(~rating)
+    facet_wrap(~rating)+
+    scale_color_brewer(palette = "Blues")+
+    theme_dark()
   
-  p2<-ggplot(aes(y = var1, x= rating), data = data1)+
-    geom_boxplot()+
+  p2<-ggplot(aes(y = var1, x= rating, color= rating),
+             data = data1)+
+    geom_boxplot(alpha=0.5)+
     #only use the part after $
-    ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+    ylab(var_name)+
     stat_summary(fun.y=mean, colour="red", geom="point",
                  size=2)+
     coord_cartesian(ylim=r1)+
-    facet_wrap(~filtering)
+    facet_wrap(~filtering)+
+    scale_color_brewer(palette = "Blues")+
+    theme_dark()
   
-  p3<-ggplot(aes(y = var1, x= rating), data = data1)+
-    geom_boxplot()+
+  p3<-ggplot(aes(y = var1, x= rating, color= rating),
+             data = data1)+
+    geom_boxplot(alpha=0.5)+
     #only use the part after $
-    ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+    ylab(var_name)+
     stat_summary(fun.y=mean, colour="red", geom="point",
                  size=2)+
-    facet_wrap(~filtering)
+    facet_wrap(~filtering)+
+    scale_color_brewer(palette = "Blues")+
+    theme_dark()
   
   return(list(p1,p2,p3))
 }
@@ -673,7 +756,9 @@ plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25,
 
                coord_cartesian(ylim = r1)+
                #only use the part after $ for label name
-               ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])
+               ylab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
+               scale_color_brewer(palette = "Blues")+
+               theme_dark()
 
   
   #remove legend
@@ -697,7 +782,7 @@ plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25,
 #   res <- list(res,pi)
 # }
 
-plot_vs_quality(wines_w$sulphates)
+plot_vs_quality(wines_w$sulphates, show_leg = T)
 ```
 
 The majority of wines is of quality 5 to 7. There appears no clear pattern linking suplhates to the quality (and therefore rating). This is the case for most variables apart from few exceptions.
@@ -745,9 +830,9 @@ I have also calculated the Pearson's R between quality and the other variables. 
 
 
 ```{r echo=FALSE}
-cor_all <-cor(wines_w[13],wines_w[,c(2:12,15)])
-
-#cor_f <-cor(filtered_wines_w[13],filtered_wines_w[,c(2:13,15)])
+exclude <- c("X", "quality", "rating","filtering")
+keep <- !names(wines_w) %in% exclude
+cor_all <-cor(wines_w["quality"],wines_w[,keep])
 
 rel_cor <- cor_all[,abs(cor_all) > 0.15]
 
@@ -803,7 +888,11 @@ plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE,
                #only use the part after $
                xlab(strsplit(deparse(substitute(var1)),"\\$")[[1]][2])+
                ylab(strsplit(deparse(substitute(var2)),"\\$")[[1]][2])+
-               scale_alpha_manual(values = c(0.7,0.2,0.4,0.7))
+               scale_alpha_manual(values = c(0.7,0.2,0.4,0.7))+
+               scale_color_brewer(palette = "Blues")+
+               theme_dark()+
+               geom_smooth(aes(color = rating), method='lm',
+                           se = F, size =1)
   
   if(remove_outliers){
     #calculate IQRs
@@ -832,22 +921,28 @@ plot_bivar <- function(var1, var2, data1 = wines_w, show_leg = FALSE,
 
 
 ```{r echo=FALSE}
-plot_bivar(wines_w$alcohol, wines_w$density, remove_outliers = TRUE)#+
+plot_bivar(wines_w$alcohol, wines_w$density, remove_outliers = T,
+           show_leg = T)#+
   #coord_cartesian(xlim = c(8.0,9.0), ylim = c(0.99,1.005))
   #coord_cartesian(xlim = c(12.5,14.5), ylim = c(0.985,0.995))
 
-plot_bivar(wines_w$alcohol, wines_w$total.sulfur.dioxide)
+plot_bivar(wines_w$alcohol, wines_w$total.sulfur.dioxide,
+           show_leg = T)
 
-plot_bivar(wines_w$alcohol, wines_w$chlorides)
+plot_bivar(wines_w$alcohol, wines_w$chlorides,
+           show_leg = T)
 
-plot_bivar(wines_w$volatile.acidity, wines_w$ratio.sulfur.dioxide)+
+plot_bivar(wines_w$volatile.acidity, wines_w$ratio.sulfur.dioxide,
+           show_leg = T)+
   coord_cartesian(xlim = c(0.1,0.6))
 
 
-plot_bivar(wines_w$density, wines_w$total.sulfur.dioxide)+
+plot_bivar(wines_w$density, wines_w$total.sulfur.dioxide,
+           show_leg = T)+
   coord_cartesian(xlim = c(0.988,1.001), ylim = c(50,250))
 
-plot_bivar(wines_w$density, wines_w$chlorides)+
+plot_bivar(wines_w$density, wines_w$chlorides,
+           show_leg = T)+
   coord_cartesian(xlim = c(0.988,1.001), ylim = c(0.01, 0.075))
 ```
 
@@ -874,15 +969,17 @@ Accidentally both list have three entries with correlation above 0.2 (in absolut
 
 plot_bivar(filtered_wines_w$residual.sugar, 
            filtered_wines_w$total.sulfur.dioxide,
-           data = filtered_wines_w)
+           data = filtered_wines_w,
+           show_leg = T)
 
 plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$residual.sugar,
-           data = filtered_wines_w)+
+           data = filtered_wines_w,
+           show_leg = T)+
   coord_cartesian(ylim = c(0,8.0))
 
 
 plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$total.sulfur.dioxide,
-           data = filtered_wines_w)
+           data = filtered_wines_w, show_leg = T)
 ```
 
 The plot of residual.sugar against total.sulfur.dioxide reveals an area dominated by good and excellent wines (where residual sugar is between 3 and 9). Next I will zoom into this section of the plot. I will also visualize two additional variables through size and shape.
@@ -911,7 +1008,9 @@ In plot below size corresponds to alcohol and shape to pH. I have tried differen
                ylab("total.sulfur.dioxide")+
                scale_alpha_manual(values = c(0.7,0.2,0.4,0.7))+
                scale_size(range = c(1,6))+
-               labs(shape="pH (level)")
+               labs(shape="pH (level)")+
+               scale_color_brewer(palette = "Blues")+
+               theme_dark()
                 
   
   #calculate IQRs
@@ -951,12 +1050,12 @@ Yet I found the extent of this surprising. Density and chlorides are the feature
 The plot below nicely shows the difference between the two data sets. The plot for all wines shows a linear tendency, while the plot for filtered wines is more scattered.
 
 ```{r echo=FALSE}
-p0 <- plot_bivar(wines_w$alcohol, wines_w$density, show_leg = FALSE)
+p0 <- plot_bivar(wines_w$alcohol, wines_w$density, show_leg = T)
 p0 <- p0 + ggtitle("All wines [vs density]")
 
 
 p1 <- plot_bivar(filtered_wines_w$alcohol, filtered_wines_w$residual.sugar,
-           data = filtered_wines_w, show_leg = FALSE)+
+           data = filtered_wines_w, show_leg = T)+
   coord_cartesian(xlim = c(8,14), ylim = c(0.0,7.5))
 p1 <- p1 + ggtitle("Filtered wines [vs residual.sugar]")
 
@@ -995,6 +1094,7 @@ Base on my investigation I am sceptical about finding an objective and universal
 ```{r echo=FALSE, Plot_One}
 p1 <- plot_vs_quality(wines_w$chlorides)
 p1 <- p1 + geom_hline(yintercept = 0.037, linetype="dotted", color = "blue")
+p1 <- p1 + ylab("chlorides [g / dm^3]")
 
 p2 <- plot_vs_quality(wines_w$ratio.sulfur.dioxide)
 p2 <- p2 + geom_hline(aes(yintercept = 0.2717, linetype="cut off"), 
@@ -1007,6 +1107,7 @@ p2 <- p2 + guides(color = FALSE)
 p3 <- plot_vs_quality(wines_w$density)
 p3 <- p3 + geom_hline(yintercept = 0.9918, color = "blue",
                       linetype="dotted")
+p3 <- p3 + ylab("chlorides [g / cm^3]")
 
 p4 <- plot_vs_quality(wines_w$alcohol)
 p4 <- p4 + geom_hline(aes(yintercept = 11.0, linetype=" "), color = "blue")
@@ -1014,6 +1115,7 @@ p4 <- p4 + scale_linetype_manual("cut off",values=c("dotted"),
                         guide=guide_legend(override.aes =
                                              list(colour = c("blue"))))
 p4 <- p4 + guides(fill = FALSE, linetype = FALSE )
+p4 <- p4 + ylab("alcohol [%]")
 
 g <- ggplotGrob(p2+theme(legend.position="right"))$grobs
 l1 <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
@@ -1045,7 +1147,7 @@ I do not consider alcohol content for filtering. People can consciously choose w
 ```{r echo=FALSE}
 ggplot(aes(y = baf_wines_w$residual.sugar, x= rating, color = rating),
        data = baf_wines_w)+
-  geom_boxplot()+
+  geom_boxplot(alpha = 0.5)+
   ylab("residual.sugar [g / dm^3]")+
   stat_summary(fun.y=mean, color = "red", geom="point", size = 2,
                aes(fill = "mean"))+
@@ -1069,7 +1171,9 @@ ggplot(aes(y = baf_wines_w$residual.sugar, x= rating, color = rating),
                         guide=guide_legend(override.aes = list(
                           colour = c("green", "blue"))))+
   ggtitle("Impact of Filtering")+
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_color_brewer(palette = "Blues")+
+  theme_dark()
 
 ```
 
@@ -1111,7 +1215,9 @@ Apart from removing subpar wines (bellow good), filtering can also accentuate th
                ylab("total.sulfur.dioxide [mg / dm^3]")+
                scale_alpha_manual(values = c(0.7,0.2,0.4,0.7))+
                scale_size(range = c(1,6))+
-               labs(shape="pH (level)", size ="alcohol [%]")
+               labs(shape="pH (level)", size ="alcohol [%]")+
+               scale_color_brewer(palette = "Blues")+
+               theme_dark()
               
   #calculate IQRs
   iqr1 <- IQR(var1)

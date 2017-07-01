@@ -62,7 +62,7 @@ wines_w$ratio.sulfur.dioxide<-wines_w$free.sulfur.dioxide/
 
 quality_bar<-function(title, data1 = wines_w, show_leg = FALSE,
                       show_all_hist = FALSE){
-  p1<-ggplot(aes(x = quality, fill = rating), data = data1) +
+  p1<-ggplot(aes(x = as.factor(quality), fill = rating), data = data1) +
   geom_bar() +
   xlab('Quality') +
   ylab('Count')+
@@ -154,11 +154,13 @@ explore_var <- function(var1, data1 = wines_w){
   
   #histograms 
   h1<-ggplot(aes(x = var1, fill = rating), data = data1 )+
-  geom_histogram(color = 'gray') +
+  geom_histogram(color = 'gray')+
   facet_wrap(~rating, scales = "free_y")+
-  xlab(var_name)+
+  #xlab(paste("log(",var_name,")",sep=""))+
+  xlab(paste(var_name,"(no outliers)",sep=""))+
   scale_fill_brewer(palette = "Blues")+
   theme_dark()
+  #scale_x_log10()
   
   # boxplot
   b1<-ggplot(aes(y = var1, x= rating, color = rating), data = data1)+
@@ -174,9 +176,11 @@ explore_var <- function(var1, data1 = wines_w){
   #for all variables
   h0<-ggplot(aes(x = var1), data = wines_w)+
   geom_histogram(color = 'gray', fill = 'orange', bins = 60)+
-  xlab(var_name)+
+  #xlab(paste("log(",var_name,")",sep=""))+
+  xlab(paste(var_name,"(no outliers)",sep=""))+
   scale_fill_brewer(palette = "Blues")+
   theme_dark()
+  #scale_x_log10()
   
   s0<-summary(var1)
 
@@ -190,44 +194,52 @@ Such trends are even more pronunced in most of the other variables. Chlorides ar
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$chlorides)
-res_var[[4]]
+res_var[[4]]+coord_cartesian(xlim = c(0.0,0.13))
 res_var[[5]]
 ```
 
-Most variables follow a similar trend.
+Most variables follow a similar trend. To handle outliers to the right better I will use a logaritmic scale on the x axis.
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$citric.acid)
-res_var[[4]]
+res_var[[4]]+coord_cartesian(xlim = c(0.0,1.0))
 res_var[[5]]
 ```
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$volatile.acidity)
-res_var[[4]]
+res_var[[4]]+coord_cartesian(xlim = c(0.0,0.75))
 res_var[[5]]
 ```
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$density)
-res_var[[4]]
+res_var[[4]]+coord_cartesian(xlim = c(0.98,1.01))
 res_var[[5]]
 ```
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$free.sulfur.dioxide)
-res_var[[4]]
+res_var[[4]]+coord_cartesian(xlim = c(0.0,125))
 res_var[[5]]
 ```
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$total.sulfur.dioxide)
-res_var[[4]]
+res_var[[4]]+coord_cartesian(xlim = c(0,350))
 res_var[[5]]
 ```
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$ratio.sulfur.dioxide)
+res_var[[4]]
+res_var[[5]]
+```
+
+
+
+```{r, echo=FALSE}
+res_var <-explore_var(wines_w$pH)
 res_var[[4]]
 res_var[[5]]
 ```
@@ -240,17 +252,23 @@ res_var[[4]]
 res_var[[5]]
 ```
 
+Alcohol doesn't look resemble a normal distribution.
+
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$residual.sugar)
-res_var[[4]]
+res_var[[4]]+coord_cartesian(xlim = c(0,30))
 res_var[[5]]
 ```
+
+Residual sugar has clearly two distinct peaks.
 
 ```{r, echo=FALSE}
 res_var <-explore_var(wines_w$sulphates)
 res_var[[4]]
 res_var[[5]]
 ```
+
+Sulphates appear to follow a normal distribution although there are many 'spikes' disturbing the smooth curve.
 
 ## Investigating individual variables
 
@@ -606,12 +624,24 @@ However I was not able to complete remove bad wines with simple pruning describe
 ```{r echo=FALSE}
 fw1 <- filter_data(quote(residual.sugar > 4.212 & total.sulfur.dioxide > 113.8 &
                           alcohol > 12.4), data = filtered_wines_w)
-p1 <- quality_bar("No C.A.", fw1)
+p1 <- ggplot(aes(x = as.factor(quality), fill = rating), data = fw1) +
+  geom_bar() +
+  xlab('Quality') +
+  ylab('Count')+
+  ggtitle("No C.A.")+
+  theme_dark()
+
 p1 <- p1+geom_bar(color = 'green', fill = NA, linetype="dashed", data = fw1)
 p1 <- p1+scale_fill_manual(values = used_cols[2:4])
 
 fw0 <- filter_data(quote(citric.acid > 0.3375), data = fw1)
-p0  <- quality_bar("All", fw0)
+p0 <- ggplot(aes(x = as.factor(quality), fill = rating), data = fw0) +
+  geom_bar() +
+  xlab('Quality') +
+  ylab('Count')+
+  ggtitle("All")+
+  theme_dark()
+
 p0  <- p0+geom_bar(color = 'green', fill = NA, linetype="dashed", data = fw1)
 p0  <- p0+scale_fill_manual(values = used_cols[2:4])
 

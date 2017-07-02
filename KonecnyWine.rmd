@@ -1,5 +1,13 @@
-EXPLORING WINE QUALITY by STEFAN KONECNY
-========================================================
+---
+title: "EXPLORING WINE QUALITY"
+author: Štefan Konečný
+date: July 2, 2017
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
 # Load all of the packages that you end up using in your analysis in this code
@@ -766,7 +774,7 @@ plot_vs_quality <- function(var1, data1 = wines_w, alpha1 = 0.25,
   md1 <- median(var1)
   r1 <- c(md1- 2*iqr1, md1+ 2*iqr1)
 
-  p1 <- ggplot(aes(x = quality, y = var1, color = rating),
+  p1 <- ggplot(aes(x = as.factor(quality), y = var1, color = rating),
                     data= data1)+
                geom_point(alpha = alpha1, position = position_jitter(h=0))+
                stat_summary(fun.y=mean, color = "red", geom="point",
